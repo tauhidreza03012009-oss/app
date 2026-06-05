@@ -66,6 +66,20 @@
                 doc.webkitRequestFullscreen();
             }
         }
+
+        // Listen for the first touch event to blast away the native bars completely
+        window.addEventListener('touchstart', lockImmersive, { once: true });
+        window.addEventListener('click', lockImmersive, { once: true });
+    </script>
+</body>
+</html>
+            const doc = document.documentElement;
+            if (doc.requestFullscreen) {
+                doc.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+            } else if (doc.webkitRequestFullscreen) {
+                doc.webkitRequestFullscreen();
+            }
+        }
         // Listen for the first touch event to blast away the native bars completely
         window.addEventListener('touchstart', lockImmersive, { once: true });
         window.addEventListener('click', lockImmersive, { once: true });
