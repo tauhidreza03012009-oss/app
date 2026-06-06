@@ -1,0 +1,31 @@
+   * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Roboto, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Game Screen Box */
+        .game-canvas {
+            text-align: center;
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #a370f7;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        h1 { color: #a370f7; margin: 0 0 10px 0; font-size: 24px; }
+        p { color: #aaa; margin: 0; font-size: 14px; }
