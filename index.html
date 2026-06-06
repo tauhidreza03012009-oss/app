@@ -3,19 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Immersive Game Mode</title>
-    
+    <title>3D Immersive App</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <link rel="stylesheet" href="style.css">
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div class="game-canvas">
-        <h1>Immersive Mode Active</h1>
-        <p>Tap anywhere on the screen if the hardware bars are still visible!</p>
-    </div>
+    <div id="game-container"></div>
 
     <script src="main.js"></script>
 </body>
