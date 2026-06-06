@@ -7,40 +7,8 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
-
-    <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background-color: #121212;
-            color: #ffffff;
-            font-family: Roboto, sans-serif;
-            overflow: hidden;
-            touch-action: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        /* Game Screen Box */
-        .game-canvas {
-            text-align: center;
-            background: #1e1e1e;
-            padding: 30px;
-            border-radius: 12px;
-            border: 2px solid #a370f7;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        h1 { color: #a370f7; margin: 0 0 10px 0; font-size: 24px; }
-        p { color: #aaa; margin: 0; font-size: 14px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    
 </head>
 <body>
 
@@ -49,27 +17,6 @@
         <p>Tap anywhere on the screen if the hardware bars are still visible!</p>
     </div>
 
-    <script>
-        // Force the Service Worker registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js');
-            });
-        }
-
-        // TRICK: The moment the user touches the app, force Android into true hardware immersion
-        function lockImmersive() {
-            const doc = document.documentElement;
-            if (doc.requestFullscreen) {
-                doc.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
-            } else if (doc.webkitRequestFullscreen) {
-                doc.webkitRequestFullscreen();
-            }
-        }
-
-        // Listen for the first touch event to blast away the native bars completely
-        window.addEventListener('touchstart', lockImmersive, { once: true });
-        window.addEventListener('click', lockImmersive, { once: true });
-    </script>
+    <script src="main.js"></script>
 </body>
 </html>
