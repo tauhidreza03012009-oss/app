@@ -7,8 +7,6 @@ let fallingCubeMesh, fallingCubeBody;
 const joystickInput = { x: 0, z: 0 };
 
 async function init() {
-    for(let i=0;i<2000;i++){
-        console.log("fine")}
     try {
         // Initialize the WebAssembly binary physics module
         await RAPIER.init();
