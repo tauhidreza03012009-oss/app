@@ -21,3 +21,29 @@ canvas {
     height: 100% !important;
     display: block;
 }
+/* --- Virtual Joystick Layout --- */
+#joystick-zone {
+    position: fixed;
+    bottom: 40px;
+    left: 40px;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999; /* Keeps the control system on top of your 3D canvas */
+    touch-action: none; /* Prevents mobile browser pull-to-refresh gestures */
+}
+
+#joystick-handle {
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.05s ease-out; /* Keeps movement feedback smooth */
+    pointer-events: none; /* Let touches pass directly through to the main zone */
+    }
