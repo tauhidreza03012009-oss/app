@@ -24,10 +24,10 @@ canvas {
 /* --- Virtual Joystick Layout --- */
 #joystick-zone {
     position: fixed;
-    bottom: 140px;
-    left: 140px;
-    width: 200px;
-    height: 200px;
+    bottom: 340px;
+    left: 340px;
+    width: 400px;
+    height: 400px;
     background: rgba(255, 255, 255, 0.15);
     border: 3px solid rgba(255, 255, 255, 0.4);
     border-radius: 50%;
@@ -39,8 +39,8 @@ canvas {
 }
 
 #joystick-handle {
-    width: 88px;
-    height: 88px;
+    width: 176px;
+    height: 176px;
     background: rgba(255, 255, 255, 0.8);
     border-radius: 50%;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
