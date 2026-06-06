@@ -4,8 +4,6 @@ import RAPIER from "https://cdn.skypack.dev/@dimforge/rapier3d-compat@0.14.0";
 let scene, camera, renderer;
 let physicsWorld;
 let fallingCubeMesh, fallingCubeBody;
-
-// Global tracking object for mobile thumb inputs
 const joystickInput = { x: 0, z: 0 };
 
 async function init() {
