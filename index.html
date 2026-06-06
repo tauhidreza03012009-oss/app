@@ -24,7 +24,6 @@
             .catch(err => console.error('Service Worker registration failed', err));
     });
         }
-        
         window.addEventListener('error', function(e) {
             alert("Crash Log:\nMessage: " + e.message + "\nFile: " + e.filename + "\nLine: " + e.lineno);
         });
