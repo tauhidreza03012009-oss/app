@@ -3,17 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>3D Immersive App</title>
-    <link rel="manifest" href="manifest.json">
+    <title>3D Mobile Arena</title>
     <meta name="theme-color" content="#121212">
     <link rel="stylesheet" href="style.css">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
     <div id="game-container"></div>
 
-    <script src="main.js"></script>
+    <div id="joystick-zone">
+        <div id="joystick-handle"></div>
+    </div>
+
+    <script>
+        window.addEventListener('error', function(e) {
+            alert("Crash Log:\nMessage: " + e.message + "\nFile: " + e.filename + "\nLine: " + e.lineno);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            alert("Promise Crash:\nReason: " + e.reason);
+        });
+    </script>
+
+    <script type="module" src="main.js"></script>
 </body>
 </html>
