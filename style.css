@@ -3,47 +3,57 @@
     user-select: none;
     -webkit-user-select: none;
 }
+
 html, body {
     width: 100%;
     height: 100%;
     margin: 0;
     padding: 0;
-    background-color: #000000; /* Dark background for 3D world */
+    background-color: #1a1a1a;
     overflow: hidden;
+    position: relative;
 }
+
 #game-container {
     width: 100vw;
     height: 100vh;
-    display: block;
-}
-canvas {
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-}
-/* --- Virtual Joystick Layout --- */
-#joystick-zone {
-    position: fixed;
-    bottom: 40px;
-    left: 40px;
-    width: 100px;
-    height: 100px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999; /* Keeps the control system on top of your 3D canvas */
-    touch-action: none; /* Prevents mobile browser pull-to-refresh gestures */
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
 }
 
-#joystick-handle {
-    width:44px;
-    height:44px;
-    background: rgba(255, 255, 255, 0.8);
+canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Bright Neon Joystick Base */
+#joystick-zone {
+    position: absolute;
+    bottom: 60px;
+    left: 60px;
+    width: 130px;
+    height: 130px;
+    background: rgba(0, 255, 204, 0.1); /* Subtle neon tint */
+    border: 3px solid #00ffcc;          /* Bright Cyan Border */
     border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    transition: transform 0.05s ease-out; /* Keeps movement feedback smooth */
-    pointer-events: none; /* Let touches pass directly through to the main zone */
-    }
+    z-index: 9999;                      /* Force it on top of everything */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+}
+
+/* Bright Joystick Knob */
+#joystick-handle {
+    width: 55px;
+    height: 55px;
+    background: #00ffcc;                /* Solid Cyan Center */
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    transition: transform 0.05s linear;
+    box-shadow: 0 0 20px #00ffcc, inset 0 0 5px rgba(255, 255, 255, 0.8);
+}
