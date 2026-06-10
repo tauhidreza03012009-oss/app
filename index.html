@@ -344,13 +344,23 @@ async function main(){
   socket.on('tick', (serverPlayers) => {
     for (const id in serverPlayers) {
       if (id === myNetworkId) {
-        // Optional Server Reconciliation:
-        // If local position drifts drastically from server validation, snap it back
-        const sData = serverPlayers[id];
-        const dist = player.position.distanceTo(new THREE.Vector3(sData.x, sData.y, sData.z));
-        if (dist > 3.0) { // Only force correction if out of sync by more than 3 units
-          pBody.setTranslation({ x: sData.x, y: sData.y + PH/2, z: sData.z });
-        }
+        // 🚀 REPLACE WITH THIS LOOSER, SMOOTHER RECONCILIATION:
+const sData = serverPlayers[id];
+const dist = player.position.distanceTo(new THREE.Vector3(sData.x, sData.y, sData.z));
+
+// Only snap the player if they are massively out of sync (e.g., fell through the map)
+if (dist > 8.0) { 
+  pBody.setTranslation({ x: sData.x, y: sData.y + PH/2, z: sData.z });
+} else if (dist > 0.1) {
+  // Instead of snapping instantly, softly blend your position toward the server's truth
+  const currentPos = pBody.translation();
+  pBody.setTranslation({
+    x: currentPos.x + (sData.x - currentPos.x) * 0.1,
+    y: currentPos.y + ((sData.y + PH/2) - currentPos.y) * 0.1,
+    z: currentPos.z + (sData.z - currentPos.z) * 0.1
+  });
+}
+
         continue;
       }
 
