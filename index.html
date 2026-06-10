@@ -504,7 +504,35 @@ socket.on('tick', (serverPlayers) => {
 
     camera.lookAt(lookAt);
     ring.rotation.z=elapsed*2;
-    renderer.render(scene,camera);
+        // ── RENDER SYSTEM ────────────────────────────────────────────────────────
+    // 1. Render the main 3D Game View (Full Screen)
+    renderer.setViewport(0, 0, innerWidth, innerHeight);
+    renderer.setScissor(0, 0, innerWidth, innerHeight);
+    renderer.setScissorTest(true);
+    renderer.render(scene, camera);
+
+    // 2. Render the 2D Minimap View (Top-Right Corner)
+    const mapSize = Math.min(innerWidth, innerHeight) * 0.25; // Minimap takes up 25% of screen size
+    const mapX = innerWidth - mapSize - 20;                   // 20px padding from the right edge
+    const mapY = innerHeight - mapSize - 20;                  // 20px padding from the top edge
+
+    // Keep the minimap camera perfectly centered directly above YOUR player capsule
+    minimapCamera.position.set(player.position.x, 200, player.position.z);
+    minimapCamera.lookAt(player.position.x, player.position.y, player.position.z);
+
+    // Render the minimap cutout box
+    renderer.setViewport(mapX, mapY, mapSize, mapSize);
+    renderer.setScissor(mapX, mapY, mapSize, mapSize);
+    renderer.setScissorTest(true);
+    
+    // Clear the background of the minimap box to make it stand out slightly
+    renderer.setClearColor(0xeef2f7); 
+    renderer.clearDepth(); // Prevents 3D elements from clipping out
+    renderer.render(scene, minimapCamera);
+    
+    // Reset background color for the main frame canvas loop
+    renderer.setClearColor(0xffffff); 
+
   }
   frame();
 }
