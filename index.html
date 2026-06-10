@@ -342,6 +342,7 @@ async function main(){
   });
 
   // 🚀 REPLACE WITH THIS LOOSE CLIENT-AUTHORITATIVE LOOKUP:
+// 🚀 REPLACE WITH THIS LOOSE CLIENT-AUTHORITATIVE LOOKUP:
 socket.on('tick', (serverPlayers) => {
   for (const id in serverPlayers) {
     // Completely bypass parsing your own networking id!
@@ -359,16 +360,6 @@ socket.on('tick', (serverPlayers) => {
   }
 });
 
-      const pData = serverPlayers[id];
-      if (!remotePlayers[id]) {
-        remotePlayers[id] = createRemotePlayerMesh();
-        targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
-      }
-      
-      // Store targeted position parameters received from the backend
-      targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
-    }
-  });
 
   socket.on('removePlayer', (id) => {
     if (remotePlayers[id]) {
