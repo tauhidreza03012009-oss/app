@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#121212">
-<title>3D Mega Arena - Multi-Room Multiplayer Edition</title>
+<title>3D Mega Arena - Multi-Room Prediction Edition</title>
 <link rel="manifest" href="./manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;}
@@ -59,14 +58,13 @@ canvas{display:block;width:100%!important;height:100%!important;touch-action:non
 </head>
 <body>
 <div id="loading">
-  <div>CONNECTING TO MEGA ARENA NETWORK...</div>
+  <div>CONNECTING TO PREDICTION NETWORK...</div>
   <div style="font-size:10px;color:#666;letter-spacing:1px;">Spawning player at Y:100</div>
 </div>
 <canvas id="c"></canvas>
 <div id="jst"><div id="jsk"></div></div>
 <div id="jmp">JUMP</div>
 <div id="run">RUN</div>
-
     <script>
         if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -83,16 +81,15 @@ canvas{display:block;width:100%!important;height:100%!important;touch-action:non
         });
     </script>
 <script src="/socket.io/socket.io.js"></script>
-
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
 
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
-// Connects to the backend server automatically via relative path
 const socket = io();
 let myNetworkId = null;
-const remotePlayers = {}; // Keeps track of Three.js meshes for other players
+const remotePlayers = {}; 
+const targetStates = {}; // Stores server positional goals for interpolation
 
 // ── SHARED STATE ──────────────────────────────────────────────────────────────
 let vy = 0;
@@ -132,7 +129,7 @@ function toggleRun(force){
 }
 runEl.addEventListener('touchstart',e=>{e.preventDefault();toggleRun();},{passive:false});
 
-// ── CAMERA DRAG (NATURAL SWIPE MECHANIC) ──────────────────────────────────────
+// ── CAMERA DRAG ───────────────────────────────────────────────────────────────
 let camYaw=0,camPitch=0.4,cId=-1,cLx=0,cLy=0;
 window.addEventListener('touchstart',e=>{
   for(const t of e.changedTouches){
@@ -189,7 +186,6 @@ async function main(){
   renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 
   const scene=new THREE.Scene();
-  
   scene.background=new THREE.Color(0xffffff); 
   scene.fog=new THREE.FogExp2(0xffffff,0.001); 
   const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,500); 
@@ -207,7 +203,7 @@ async function main(){
   // ── PHYSICS WORLD ────────────────────────────────────────────────────────────
   const world=new R.World({x:0,y:-32,z:0});
 
-  // ── ENVIRONMENT PALETTE ──────────────────────────────────────────────────────
+  // Environment Setup
   const wallMat=new THREE.MeshStandardMaterial({color:0xd2d7df,roughness:0.6});
   const innerWallMat=new THREE.MeshStandardMaterial({color:0xc0c6cf,roughness:0.5});
   const pillarMat=new THREE.MeshStandardMaterial({color:0xa8afb8,roughness:0.5});
@@ -225,24 +221,21 @@ async function main(){
   const fBody=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0,-0.5,0));
   world.createCollider(R.ColliderDesc.cuboid(MAP_SIZE/2,0.5,MAP_SIZE/2),fBody);
 
-  function addStaticWall(x,y,z,w,h,d,material=wallMat,cast=true,receive=true){
+  function addStaticWall(x,y,z,w,h,d,material=wallMat){
     const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
     mesh.position.set(x,y,z);
-    mesh.castShadow=cast;mesh.receiveShadow=receive;
+    mesh.castShadow=true;mesh.receiveShadow=true;
     scene.add(mesh);
     const rb=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x,y,z));
     world.createCollider(R.ColliderDesc.cuboid(w/2,h/2,d/2),rb);
   }
 
-  // Mega Outer Walls
-  const H_WALL = 16;
-  const HALF_M = MAP_SIZE/2;
+  // Build Map Architecture
+  const H_WALL = 16; const HALF_M = MAP_SIZE/2;
   addStaticWall(0, H_WALL/2, HALF_M, MAP_SIZE, H_WALL, 2);   
   addStaticWall(0, H_WALL/2, -HALF_M, MAP_SIZE, H_WALL, 2);  
   addStaticWall(HALF_M, H_WALL/2, 0, 2, H_WALL, MAP_SIZE);   
   addStaticWall(-HALF_M, H_WALL/2, 0, 2, H_WALL, MAP_SIZE);  
-
-  // Dividers & Layout Components
   addStaticWall(-60, 6, 95, 2, 12, 60, innerWallMat);  
   addStaticWall(-60, 6, -95, 2, 12, 60, innerWallMat); 
   addStaticWall(60, 6, 95, 2, 12, 60, innerWallMat);   
@@ -251,13 +244,11 @@ async function main(){
   addStaticWall(95, 6, -60, 60, 12, 2, innerWallMat);  
   addStaticWall(-95, 6, 60, 60, 12, 2, innerWallMat);  
   addStaticWall(95, 6, 60, 60, 12, 2, innerWallMat);   
-
   addStaticWall(0, 11, -60, 24, 2, 4, detailMat);
   addStaticWall(0, 11, 60, 24, 2, 4, detailMat);
   addStaticWall(-60, 11, 0, 4, 2, 24, detailMat);
   addStaticWall(60, 11, 0, 4, 2, 24, detailMat);
 
-  // Hub and Zones
   for(let x of [-20, 20]) {
     for(let z of [-20, 20]) {
       addStaticWall(x, 7, z, 4, 14, 4, pillarMat);
@@ -266,13 +257,11 @@ async function main(){
   }
   addStaticWall(0, 2, 0, 8, 4, 8, platformMat);
   addStaticWall(0, 4.25, 0, 6, 0.5, 6, detailMat);
-
   addStaticWall(100, 4, 100, 30, 8, 30, wallMat); 
   addStaticWall(100, 9, 100, 15, 2, 15, platformMat); 
   addStaticWall(75, 3, 120, 2, 6, 40);
   addStaticWall(120, 3, 75, 40, 6, 2);
   for(let i=0; i<4; i++) addStaticWall(70 + (i*20), 5, 145, 3, 10, 3, pillarMat);
-
   addStaticWall(-110, 4, 110, 4, 8, 50);
   addStaticWall(-90, 4, 85, 45, 8, 4);
   addStaticWall(-70, 4, 120, 4, 8, 35);
@@ -280,27 +269,24 @@ async function main(){
   addStaticWall(-120, 3, 130, 40, 6, 4);
   addStaticWall(-95, 1, 120, 16, 2, 16, platformMat);
   addStaticWall(-95, 2.25, 120, 12, 0.5, 12, detailMat);
-
   addStaticWall(110, 8, -110, 8, 16, 8, pillarMat);
   addStaticWall(130, 6, -90, 6, 12, 6, pillarMat);
   addStaticWall(90, 5, -130, 5, 10, 5, pillarMat);
   addStaticWall(85, 7, -85, 10, 14, 10, wallMat);
   addStaticWall(140, 2, -140, 20, 4, 8);
   addStaticWall(100, 2, -140, 8, 4, 20);
-
   addStaticWall(-100, 5, -100, 40, 10, 4, wallMat);
   addStaticWall(-120, 5, -80, 4, 10, 44, wallMat);
   addStaticWall(-80, 5, -120, 4, 10, 44, wallMat);
   addStaticWall(-100, 2, -100, 12, 4, 12, platformMat);
   addStaticWall(-100, 4.25, -100, 8, 0.5, 8, detailMat);
   addStaticWall(-140, 8, -140, 6, 16, 6, pillarMat);
-
   addStaticWall(150, 4, 0, 10, 8, 25, innerWallMat);
   addStaticWall(-150, 4, 0, 10, 8, 25, innerWallMat);
   addStaticWall(0, 4, 150, 25, 8, 10, innerWallMat);
   addStaticWall(0, 4, -150, 25, 8, 10, innerWallMat);
 
-  // ── PLAYER SETUP (LOCAL CHARACTER) ──────────────────────────────────────────
+  // ── PLAYER SETUP ────────────────────────────────────────────────────────────
   const PH=1.8,PR=0.35;
   const player=new THREE.Group();
   scene.add(player);
@@ -328,11 +314,9 @@ async function main(){
   visor.position.set(0,1.4,-0.25);
   player.add(visor);
 
-  // ── HELPER FUNCTION TO SPAWN GHOST CLONES FOR REMOTE PLAYERS ─────────────────
+  // Helper to spawn clones
   function createRemotePlayerMesh() {
     const group = new THREE.Group();
-    
-    // Teal/Blue colored capsule for opposing players
     const body = new THREE.Mesh(
       new THREE.CapsuleGeometry(PR, PH - PR * 2, 8, 16),
       new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.2 })
@@ -347,31 +331,37 @@ async function main(){
     );
     v.position.set(0, 1.4, -0.25);
     group.add(v);
-
     scene.add(group);
     return group;
   }
 
-  // ── NETWORKING LISTENERS ────────────────────────────────────────────────────
+  // ── NETWORKING LISTENERS WITH RECONCILIATION BUFFERING ──────────────────────
   socket.on('init', (id) => {
     myNetworkId = id;
-    console.log("Connected to arena server. Your ID:", myNetworkId);
+    console.log("Connected. Unique ID:", myNetworkId);
   });
 
   socket.on('tick', (serverPlayers) => {
     for (const id in serverPlayers) {
-      if (id === myNetworkId) continue; // Skip mapping our own player data
-
-      const pData = serverPlayers[id];
-
-      // If this player isn't on our screen yet, spawn them
-      if (!remotePlayers[id]) {
-        remotePlayers[id] = createRemotePlayerMesh();
+      if (id === myNetworkId) {
+        // Optional Server Reconciliation:
+        // If local position drifts drastically from server validation, snap it back
+        const sData = serverPlayers[id];
+        const dist = player.position.distanceTo(new THREE.Vector3(sData.x, sData.y, sData.z));
+        if (dist > 3.0) { // Only force correction if out of sync by more than 3 units
+          pBody.setTranslation({ x: sData.x, y: sData.y + PH/2, z: sData.z });
+        }
+        continue;
       }
 
-      // Smoothly slide remote players to their actual positions
-      remotePlayers[id].position.set(pData.x, pData.y, pData.z);
-      remotePlayers[id].rotation.y = pData.rotY;
+      const pData = serverPlayers[id];
+      if (!remotePlayers[id]) {
+        remotePlayers[id] = createRemotePlayerMesh();
+        targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
+      }
+      
+      // Store targeted position parameters received from the backend
+      targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
     }
   });
 
@@ -379,6 +369,7 @@ async function main(){
     if (remotePlayers[id]) {
       scene.remove(remotePlayers[id]);
       delete remotePlayers[id];
+      delete targetStates[id];
     }
   });
 
@@ -399,7 +390,6 @@ async function main(){
     camera.updateProjectionMatrix();
   });
 
-  // ── SPEED & MOVEMENT SCALING TUNING ─────────────────────────────────────────
   const MOVE_SPEED = 0.32; 
   const clock=new THREE.Clock();
   const camPos=new THREE.Vector3();
@@ -433,6 +423,8 @@ async function main(){
 
     const desiredMove={x:mx*speed, y:vy*dt, z:mz*speed};
 
+    // 🚀 CLIENT-SIDE PREDICTION ACTIVE: 
+    // We compute local physics and render inputs instantly without waiting for network replies!
     controller.computeColliderMovement(pCollider, desiredMove);
     const corrected=controller.computedMovement();
 
@@ -456,7 +448,7 @@ async function main(){
       player.rotation.y = Math.atan2(mx, mz);
     }
 
-    // 📡 TRANSMIT LOCAL POSITION TO THE SEVER FOR EVERY FRAME
+    // High frequency position broadcast outbound
     if (socket.connected) {
       socket.emit('move', {
         x: player.position.x,
@@ -464,6 +456,17 @@ async function main(){
         z: player.position.z,
         rotY: player.rotation.y
       });
+    }
+
+    // ── INTERPOLATE OPPOSING REMOTE PLAYERS ──────────────────────────────────
+    for (const id in remotePlayers) {
+      if (targetStates[id]) {
+        // Smoothly blend positional matrices by 20% increments each frame step
+        remotePlayers[id].position.x += (targetStates[id].x - remotePlayers[id].position.x) * 0.20;
+        remotePlayers[id].position.y += (targetStates[id].y - remotePlayers[id].position.y) * 0.20;
+        remotePlayers[id].position.z += (targetStates[id].z - remotePlayers[id].position.z) * 0.20;
+        remotePlayers[id].rotation.y += (targetStates[id].rotY - remotePlayers[id].rotation.y) * 0.20;
+      }
     }
 
     // Cam focus processing
@@ -498,7 +501,6 @@ async function main(){
     }
 
     camera.lookAt(lookAt);
-
     ring.rotation.z=elapsed*2;
     renderer.render(scene,camera);
   }
