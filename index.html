@@ -190,6 +190,12 @@ async function main(){
   scene.fog=new THREE.FogExp2(0xffffff,0.001); 
   const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,500); 
 
+
+
+const minimapCamera = new THREE.OrthographicCamera(-190, 190, 190, -190, 1, 500);
+minimapCamera.position.set(0, 200, 0);
+minimapCamera.lookAt(0, 0, 0);       
+
   scene.add(new THREE.AmbientLight(0xffffff,0.9));
   const sun=new THREE.DirectionalLight(0xffffff,0.8);
   sun.position.set(100,200,80);
