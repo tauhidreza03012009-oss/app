@@ -492,7 +492,7 @@ window.addEventListener('mousedown', (e) => {
 });
   
   // ── SHOOTING LOGIC (ACCURATE TARGETING TRACKING) ───────────────────────────
-    // ── SHOOTING LOGIC (PERFECT CROSSHAIR ALIGNMENT) ───────────────────────────
+  // ── SHOOTING LOGIC (PERFECT CROSSHAIR ALIGNMENT) ───────────────────────────
   const raycaster = new THREE.Raycaster();
   // X = 0 (Horizontally centered), Y = 0.2 (Completely matches CSS top: 40%)
   const crosshairVector = new THREE.Vector2(0, 0.2); 
@@ -555,6 +555,7 @@ window.addEventListener('mousedown', (e) => {
       socket.emit('shoot', closestTarget);
     }
   }
+
 
 
   // ── CHARACTER CONTROLLER PHYSICS ─────────────────────────────────────────────
