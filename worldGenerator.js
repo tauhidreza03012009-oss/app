@@ -5,7 +5,7 @@ import { grassMat, pathMat, woodMat, roofMat, leafMat, stoneMat, crateMat, borde
 export function addStaticWall(scene, world, R, x, y, z, w, h, d, material = borderMat, castShadow = true){
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   mesh.position.set(x, y, z);
-  mesh.castShadow = castShadow; // Toggleable to save GPU cycles
+  mesh.castShadow = castShadow; 
   mesh.receiveShadow = true;
   scene.add(mesh);
 
@@ -18,7 +18,7 @@ export function addPath(scene, x, z, w, d) {
   const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), pathMat);
   pathMesh.rotation.x = -Math.PI / 2;
   pathMesh.position.set(x, 0.02, z); 
-  pathMesh.receiveShadow = true; // Floors never need to cast shadows
+  pathMesh.receiveShadow = true; 
   scene.add(pathMesh);
 }
 
@@ -30,47 +30,26 @@ export function addHouse(scene, world, R, x, z, w = 14, h = 9, d = 14) {
 
 // ── NATURAL ENVIRONMENT SCENERY ───────────────────────────────────────────────
 export function addTree(scene, world, R, x, z, trunkH = 5) {
-  // Trunks cast shadows
-  addStaticWall(scene, world, R, x, trunkH / 2, z, 1.2, trunkH, 1.2, woodMat, true);
-  
-  // OPTIMIZATION: Leaves do NOT cast shadows anymore. This saves huge amounts of performance in forests.
-  addStaticWall(scene, world, R, x, trunkH + 1.5, z, 5, 3, 5, leafMat, false);
-  addStaticWall(scene, world, R, x, trunkH + 3.5, z, 3.5, 2, 3.5, leafMat, false);
+  addStaticWall(scene, world, R, x, trunkH / 2, z, 1.0, trunkH, 1.0, woodMat, true);
+  addStaticWall(scene, world, R, x, trunkH + 1.5, z, 4.5, 2.5, 4.5, leafMat, false); // Performance save
 }
 
 export function addCrate(scene, world, R, x, z, size = 3, castShadow = true) {
   addStaticWall(scene, world, R, x, size / 2, z, size, size, size, crateMat, castShadow);
 }
 
-// Barricades
+// Concrete/Stone Barricades (Street Dividers / Planters)
 export function addBarricade(scene, world, R, x, z, rotationY = 0, width = 6) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 2.2, 0.8), stoneMat);
-  mesh.position.set(x, 1.1, z);
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 2.0, 1.0), stoneMat);
+  mesh.position.set(x, 1.0, z);
   mesh.rotation.y = rotationY;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   scene.add(mesh);
 
   const q = new THREE.Quaternion().setFromEuler(mesh.rotation);
-  const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, 1.1, z).setRotation({x: q.x, y: q.y, z: q.z, w: q.w}));
-  world.createCollider(R.ColliderDesc.cuboid(width / 2, 1.1, 0.4), rb);
-}
-
-// Cargo Stacks
-export function addCargoCluster(scene, world, R, x, z) {
-  // Internal/bottom crates don't need to cast shadows if they are covered
-  addCrate(scene, world, R, x, z, 3.5, true);
-  addCrate(scene, world, R, x + 3.2, z, 3, false);
-  addCrate(scene, world, R, x, z + 3.2, 3, false);
-  addStaticWall(scene, world, R, x + 1.5, 5, z + 1.5, 3, 3, 3, crateMat, true);
-}
-
-// ── SKY DOME SCENERY MODULE ───────────────────────────────────────────────────
-export function addSkyDome(scene) {
-  const geo = new THREE.SphereGeometry(280, 24, 12); // Reduced segments slightly
-  const mat = new THREE.MeshBasicMaterial({ color: 0x8fc2ff, side: THREE.BackSide, fog: false });
-  const dome = new THREE.Mesh(geo, mat);
-  scene.add(dome);
+  const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, 1.0, z).setRotation({x: q.x, y: q.y, z: q.z, w: q.w}));
+  world.createCollider(R.ColliderDesc.cuboid(width / 2, 1.0, 0.5), rb);
 }
 
 // ── LOCKED-FLAT OVERHEAD CROSSING BRIDGE ──────────────────────────────────────
@@ -78,22 +57,20 @@ export function addSkyBridge(scene, world, R, x, y, z, w, h, d, material = woodM
   addStaticWall(scene, world, R, x, y, z, w, h, d, material, true);
 }
 
-// ── SNIPER FORTRESS TOWER ─────────────────────────────────────────────────────
+// ── URBAN WATCHTOWER / CRANE SCALED UP ────────────────────────────────────────
 export function addSniperTower(scene, world, R, x, z) {
   const th = 11;
-  addStaticWall(scene, world, R, x - 3.4, th / 2, z - 3.4, 0.5, th, 0.5, woodMat, true);
-  addStaticWall(scene, world, R, x + 3.4, th / 2, z - 3.4, 0.5, th, 0.5, woodMat, true);
-  addStaticWall(scene, world, R, x - 3.4, th / 2, z + 3.4, 0.5, th, 0.5, woodMat, false);
-  addStaticWall(scene, world, R, x + 3.4, th / 2, z + 3.4, 0.5, th, 0.5, woodMat, false);
+  addStaticWall(scene, world, R, x - 3.4, th / 2, z - 3.4, 0.6, th, 0.6, stoneMat, true);
+  addStaticWall(scene, world, R, x + 3.4, th / 2, z - 3.4, 0.6, th, 0.6, stoneMat, true);
+  addStaticWall(scene, world, R, x - 3.4, th / 2, z + 3.4, 0.6, th, 0.6, stoneMat, false);
+  addStaticWall(scene, world, R, x + 3.4, th / 2, z + 3.4, 0.6, th, 0.6, stoneMat, false);
   
-  addStaticWall(scene, world, R, x, th, z, 7.2, 0.4, 7.2, woodMat, true);
-  
-  addStaticWall(scene, world, R, x, th + 1, z - 3.5, 7.2, 1.5, 0.3, stoneMat, true); 
-  addStaticWall(scene, world, R, x - 3.5, th + 1, z, 0.3, 1.5, 7.2, stoneMat, true);  
-  addStaticWall(scene, world, R, x + 3.5, th + 1, z, 0.3, 1.5, 7.2, stoneMat, true);  
-
-  addStaticWall(scene, world, R, x - 2.2, th + 1, z + 3.5, 2.0, 1.5, 0.3, stoneMat, false); 
-  addStaticWall(scene, world, R, x + 2.2, th + 1, z + 3.5, 2.0, 1.5, 0.3, stoneMat, false); 
+  addStaticWall(scene, world, R, x, th, z, 7.5, 0.4, 7.5, woodMat, true);
+  addStaticWall(scene, world, R, x, th + 1, z - 3.6, 7.5, 1.6, 0.3, stoneMat, true); 
+  addStaticWall(scene, world, R, x - 3.6, th + 1, z, 0.3, 1.6, 7.5, stoneMat, true);  
+  addStaticWall(scene, world, R, x + 3.6, th + 1, z, 0.3, 1.6, 7.5, stoneMat, true);  
+  addStaticWall(scene, world, R, x - 2.2, th + 1, z + 3.6, 2.2, 1.6, 0.3, stoneMat, false); 
+  addStaticWall(scene, world, R, x + 2.2, th + 1, z + 3.6, 2.2, 1.6, 0.3, stoneMat, false); 
 }
 
 // ── AUTOCALCULATED INCLINE GENERATOR ──────────────────────────────────────────
@@ -116,7 +93,7 @@ export function addRamp(scene, world, R, x, groundZ, targetHeight, rampLength, w
 
 // ── INITIAL LEVEL COMPOSITION CONTROLLER ──────────────────────────────────────
 export function buildMapLayout(scene, world, R, MAP_SIZE) {
-  // Ground
+  // Base Urban Foundation Ground Mesh
   const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE), grassMat); 
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.receiveShadow = true;
@@ -125,94 +102,109 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   const fBody = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0, -0.5, 0));
   world.createCollider(R.ColliderDesc.cuboid(MAP_SIZE / 2, 0.5, MAP_SIZE / 2), fBody);
 
-  // Borders (No dynamic shadows needed for outer map walls!)
-  const H_WALL = 16; const HALF_M = MAP_SIZE / 2;
+  // Peripheral Perimeter City Walls (Blocks the edge of the world map)
+  const H_WALL = 18; const HALF_M = MAP_SIZE / 2;
   addStaticWall(scene, world, R, 0, H_WALL / 2, HALF_M, MAP_SIZE, H_WALL, 4, borderMat, false);   
   addStaticWall(scene, world, R, 0, H_WALL / 2, -HALF_M, MAP_SIZE, H_WALL, 4, borderMat, false);  
   addStaticWall(scene, world, R, HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE, borderMat, false);   
   addStaticWall(scene, world, R, -HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE, borderMat, false);  
 
-  // Roads
-  addPath(scene, 0, 0, 45, 45); 
-  addPath(scene, 0, 90, 16, 150); addPath(scene, 0, -90, 16, 150);      
-  addPath(scene, 90, 0, 150, 16); addPath(scene, -90, 0, 150, 16);
-  addPath(scene, -110, 110, 80, 10);
-  addPath(scene, 110, -110, 80, 10);
+  // Sky Environment
+  const geo = new THREE.SphereGeometry(280, 24, 12);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x8fc2ff, side: THREE.BackSide, fog: false });
+  scene.add(new THREE.Mesh(geo, mat));
 
-  addSkyDome(scene);
+  // ── 1. CITY GRID HIGHWAYS (MAIN STREET BOULEVARDS) ─────────────────────────
+  // A perfect geometric crossroad dividing the city into 4 balanced, clean districts
+  addPath(scene, 0, 0, 50, 50);        // Grand Central Intersection Plaza
+  addPath(scene, 0, 95, 20, 140);     // North Avenue
+  addPath(scene, 0, -95, 20, 140);    // South Avenue
+  addPath(scene, 95, 0, 140, 20);     // East Boulevard
+  addPath(scene, -95, 0, 140, 20);    // West Boulevard
 
-  // Central Plaza
-  addStaticWall(scene, world, R, 0, 1.5, 0, 16, 3, 16, stoneMat, true); 
-  addBarricade(scene, world, R, -14, 0, Math.PI / 2, 8);
-  addBarricade(scene, world, R, 14, 0, Math.PI / 2, 8);
-  addBarricade(scene, world, R, 0, -14, 0, 8);
-  addBarricade(scene, world, R, 0, 14, 0, 8);
+  // ── 2. CENTRAL PLAZA LANDMARK (THE PLAZA FOUNTAIN / MONUMENT) ──────────────
+  // The absolute middle of the city, styled like an architectural courtyard monument
+  addStaticWall(scene, world, R, 0, 1.5, 0, 18, 3, 18, stoneMat, true); // Raised Monument Base
+  addStaticWall(scene, world, R, 0, 5.0, 0, 4, 4, 4, stoneMat, true);   // Pillar Column
+  
+  // Street Corner Traffic Planters / Barricades protecting the intersections
+  addBarricade(scene, world, R, -16, 16, Math.PI / 4, 6);
+  addBarricade(scene, world, R, 16, 16, -Math.PI / 4, 6);
+  addBarricade(scene, world, R, -16, -16, -Math.PI / 4, 6);
+  addBarricade(scene, world, R, 16, -16, Math.PI / 4, 6);
 
-  // Zone A
-  addHouse(scene, world, R, 45, 45, 16, 9, 16);   
-  addCrate(scene, world, R, 32, 38, 4, true);
-  addHouse(scene, world, R, 80, 40, 14, 9, 14);
-  addHouse(scene, world, R, 50, 85, 18, 10, 14);
-  addBarricade(scene, world, R, 35, 60, 0.4, 6);
+  // ── 3. NORTH-WEST DISTRICT: THE RESIDENTIAL SECTOR ────────────────────────
+  // Structured city block containing parallel houses and a narrow alleyway
+  addHouse(scene, world, R, -45, 45, 16, 10, 16);   // Apartment complex 1
+  addHouse(scene, world, R, -45, 75, 16, 10, 16);   // Apartment complex 2
+  addHouse(scene, world, R, -75, 45, 14, 9, 14);    // Side Townhouse
+  // Side Streets/Alleys inside the residential block
+  addPath(scene, -45, 60, 10, 14);
+  addPath(scene, -60, 45, 14, 10);
 
-  // Zone B
-  addHouse(scene, world, R, -45, -45, 22, 11, 22); 
-  addCargoCluster(scene, world, R, -20, -32);
-  addCargoCluster(scene, world, R, -52, -18);
-  addCargoCluster(scene, world, R, -22, -60);
-  addCrate(scene, world, R, -10, -20, 3.5, true);
+  // ── 4. NORTH-EAST DISTRICT: COMMERCIAL MARKET SQUARE ──────────────────────
+  // Clean store facades lined up along the boulevard sidewalk with a brick courtyard
+  addHouse(scene, world, R, 45, 45, 18, 9, 14);     // Front Cafe / Store Front
+  addHouse(scene, world, R, 80, 50, 14, 11, 20);    // The Department Store
+  addHouse(scene, world, R, 45, 80, 16, 9, 16);     // Corner Grocery Outlet
+  addBarricade(scene, world, R, 32, 32, 0, 8);      // Front Sidewalk Barrier
 
-  // Zone C
-  addHouse(scene, world, R, -45, 45, 18, 10, 18);
-  addStaticWall(scene, world, R, -28, 2, 28, 10, 4, 2, stoneMat, true); 
-  addCrate(scene, world, R, -20, 40, 3, true);
-  addHouse(scene, world, R, -85, 40, 14, 9, 14);
+  // ── 5. SOUTH-WEST DISTRICT: INDUSTRIAL FREIGHT & CONSTRUCTION SITE ────────
+  // A grid of organized storage containers and building supplies instead of messy objects
+  addHouse(scene, world, R, -55, -55, 24, 12, 24);  // The Central Factory Warehouse
+  
+  // Cleanly aligned row grids of storage cargo palettes (Construction Zone)
+  addCrate(scene, world, R, -22, -35, 4, true);
+  addCrate(scene, world, R, -22, -41, 4, true);
+  addCrate(scene, world, R, -22, -47, 4, true);
+  
+  addCrate(scene, world, R, -35, -22, 4, true);
+  addCrate(scene, world, R, -41, -22, 4, true);
+  
+  // Double-stacked supply container
+  addCrate(scene, world, R, -35, -35, 3.5, true);
+  addStaticWall(scene, world, R, -35, 5.2, -35, 3, 3, 3, crateMat, true);
 
-  // Zone D
-  addHouse(scene, world, R, 55, -55, 20, 9, 20);
-  addBarricade(scene, world, R, 32, -42, -Math.PI / 4, 7);
-  addBarricade(scene, world, R, 42, -32, -Math.PI / 4, 7);
-  addHouse(scene, world, R, 95, -50, 16, 9, 16);
+  // ── 6. SOUTH-EAST DISTRICT: BANK & GOVERNMENT PLAZA ───────────────────────
+  // Rigid, symmetrical architectural layout representing a secure institutional sector
+  addHouse(scene, world, R, 50, -50, 20, 11, 20);   // The Central Bank Building
+  addHouse(scene, world, R, 85, -50, 16, 9, 16);    // Annex Records Office
+  // Symmetrical courtyard barrier designs (Security pillars)
+  addBarricade(scene, world, R, 32, -45, Math.PI / 2, 6);
+  addBarricade(scene, world, R, 32, -55, Math.PI / 2, 6);
+  addBarricade(scene, world, R, 45, -32, 0, 6);
 
-  // Bridges & Inclines
-  addRamp(scene, world, R, -45, 56.0, 10.0, 24, 4.5, 1); 
-  addRamp(scene, world, R, 45, 55.5, 9.0, 22, 4.5, 1);  
-  addSkyBridge(scene, world, R, 0, 10.2, 45, 72, 0.3, 4, woodMat); 
+  // ── 7. SKYWAYS & ROOFTOP PASSAGES ──────────────────────────────────────────
+  // Highly realistic sky-bridges connecting the high-rise roofs across the street grid
+  addRamp(scene, world, R, -45, 24.0, 10.0, 22, 4.5, 1);  // South-West Warehouse Ramp
+  addRamp(scene, world, R, 45, 24.0, 9.0, 22, 4.5, 1);    // North-East Market Ramp
+  addSkyBridge(scene, world, R, 0, 10.2, 45, 72, 0.3, 4, woodMat); // Grand overpass crossing across the North Avenue
 
-  // Four Towers
-  addSniperTower(scene, world, R, -110, 110);
-  addRamp(scene, world, R, -110, 114.5, 11.0, 26, 3.5, 1); 
+  // ── 8. DEFENSIVE CORNER UTILITY INFRASTRUCTURE ─────────────────────────────
+  // The 4 map corners contain distinct infrastructure facilities acting as vertical combat towers
+  addSniperTower(scene, world, R, -115, 115); addRamp(scene, world, R, -115, 119.5, 11.0, 26, 3.5, 1);  // Power Substation Tower
+  addSniperTower(scene, world, R, 115, -115); addRamp(scene, world, R, 115, -119.5, 11.0, 26, 3.5, -1); // Water Processing Tower
+  addSniperTower(scene, world, R, 115, 115);  addRamp(scene, world, R, 115, 119.5, 11.0, 26, 3.5, 1);  // Radio Communication Tower
+  addSniperTower(scene, world, R, -115, -115); addRamp(scene, world, R, -115, -119.5, 11.0, 26, 3.5, -1); // Clock tower scaffold
 
-  addSniperTower(scene, world, R, 110, -110);
-  addRamp(scene, world, R, 110, -114.5, 11.0, 26, 3.5, -1);  
-
-  addSniperTower(scene, world, R, 110, 110);
-  addRamp(scene, world, R, 110, 114.5, 11.0, 26, 3.5, 1);
-
-  addSniperTower(scene, world, R, -110, -110);
-  addRamp(scene, world, R, -110, -114.5, 11.0, 26, 3.5, -1);
-
-  // Far Outer Outposts
-  addHouse(scene, world, R, -140, 70, 16, 9, 16);  
-  addHouse(scene, world, R, 140, -70, 16, 9, 16);
-  addHouse(scene, world, R, -130, -130, 20, 10, 14); 
-  addHouse(scene, world, R, 130, 130, 14, 9, 18);
-
-  // Optimized Scattered Forestry Rings
-  const clusterCenters = [
-    [-80, 0], [80, 0], [0, 80], [0, -80], 
-    [-130, 20], [130, -20], [-60, 120], [60, -120]
+  // ── 9. BOULEVARD TREE LANES (REALISTIC LINEAR FOLIAGE) ─────────────────────
+  // Instead of noisy rings, trees are neatly lined up along the edges of sidewalks, exactly like real life city blocks.
+  const streetSidewalks = [
+    // North Avenue Sidewalk Lines
+    [-13, 40], [-13, 65], [-13, 90], [-13, 115],
+    [13, 40], [13, 65], [13, 90], [13, 115],
+    // South Avenue Sidewalk Lines
+    [-13, -40], [-13, -65], [-13, -90], [-13, -115],
+    [13, -40], [13, -65], [13, -90], [13, -115],
+    // East Boulevard Sidewalk Lines
+    [40, 13], [65, 13], [90, 13], [115, 13],
+    [40, -13], [65, -13], [90, -13], [115, -13],
+    // West Boulevard Sidewalk Lines
+    [-40, 13], [-65, 13], [-90, 13], [-115, 13],
+    [-40, -13], [-65, -13], [-90, -13], [-115, -13]
   ];
-  clusterCenters.forEach(([cx, cz]) => {
-    addTree(scene, world, R, cx, cz, 5.5);
-    addTree(scene, world, R, cx + 5, cz - 6, 4.8);
-    addTree(scene, world, R, cx - 6, cz + 4, 6.2);
-    addTree(scene, world, R, cx + 7, cz + 7, 4.2);
+
+  streetSidewalks.forEach(([tx, tz]) => {
+    addTree(scene, world, R, tx, tz, 5.5);
   });
-
-  const sniperSpottedTrees = [
-    [-95, 95], [95, -95], [95, 95], [-95, -95],
-    [-25, 70], [25, 70], [-20, -75], [30, -70]
-  ];
-  sniperSpottedTrees.forEach(([tx, tz]) => addTree(scene, world, R, tx, tz, 5.0));
 }
