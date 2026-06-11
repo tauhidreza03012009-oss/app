@@ -624,35 +624,50 @@ async function main(){
       }
     }
 
+        // ── OVER-THE-SHOULDER CAMERA MATH (FREE FIRE STYLE) ───────────────────
     lookAt.set(p.x, p.y - PH/2 + 1.2, p.z);
+    
+    // 1. Calculate the ideal camera position behind the player
     const idealX = p.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
     const idealY = p.y - PH/2 + 1.2 + Math.sin(camPitch) * 7.5;
     const idealZ = p.z + Math.cos(camYaw) * Math.cos(camPitch) * 7.5;
     
-    rayDir.set(idealX - lookAt.x, idealY - lookAt.y, idealZ - lookAt.z);
+    // 2. Generate side vectors to push the camera over the right shoulder
+    const rightX = Math.cos(camYaw) * 1.4; 
+    const rightZ = -Math.sin(camYaw) * 1.4;
+
+    // Apply the over-the-shoulder offset to the camera targets
+    const finalCamX = idealX + rightX;
+    const finalCamZ = idealZ + rightZ;
+    
+    // Shift the lookAt target slightly left so crosshair points ahead, not at your ears
+    const finalLookAt = new THREE.Vector3(lookAt.x + rightX, lookAt.y, lookAt.z + rightZ);
+    
+    // 3. Obstruction Raycast Checking
+    rayDir.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
     const maxDist = rayDir.length();
     rayDir.normalize();
     
-    const ray = new R.Ray(lookAt, rayDir);
+    const ray = new R.Ray(finalLookAt, rayDir);
     const hit = world.castRay(ray, maxDist, true, null, null, pCollider);
 
     if (hit) {
       const safeDist = Math.max(0.4, hit.toi - 0.15);
-      camPos.set(lookAt.x + rayDir.x * safeDist, lookAt.y + rayDir.y * safeDist, lookAt.z + rayDir.z * safeDist);
+      camPos.set(finalLookAt.x + rayDir.x * safeDist, finalLookAt.y + rayDir.y * safeDist, finalLookAt.z + rayDir.z * safeDist);
     } else {
-      camPos.set(idealX, idealY, idealZ);
+      camPos.set(finalCamX, idealY, finalCamZ);
     }
 
     if(firstFrame){ 
       camera.position.copy(camPos); 
       firstFrame=false; 
     } else { 
-      // Frame-rate independent lerp using exponential decay
       camera.position.lerp(camPos, 1 - Math.exp(-18 * dt)); 
     }
 
-    camera.lookAt(lookAt);
+    camera.lookAt(finalLookAt);
     ring.rotation.z=elapsed*2;
+
 
     // ── RENDER SYSTEM ────────────────────────────────────────────────────────
     renderer.setViewport(0, 0, innerWidth, innerHeight);
