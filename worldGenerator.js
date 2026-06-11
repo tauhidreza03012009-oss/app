@@ -2,6 +2,38 @@ import * as THREE from 'three';
 import { grassMat, pathMat, woodMat, roofMat, leafMat, stoneMat, crateMat, borderMat } from './materials.js';
 
 // ── CORE COMPONENT ENGINE ───────────────────────────────────────────────────
+// Keep track of all active launchpads so the player script can read them
+export const activeLaunchPads = [];
+
+// ── HIGH-VELOCITY JUMPER (LAUNCHPAD) MODULE ──────────────────────────────────
+export function buildJumper(scene, world, R, x, y, z, w, d, launchX, launchY, launchZ) {
+  const h = 0.15; // Sleek, low-profile pad
+  
+  // 1. Bright, distinct visual mesh (using borderMat or a bright accent mat)
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), borderMat);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+
+  // 2. Fixed physics body
+  const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z));
+  
+  // 3. CRITICAL: Set as a SENSOR so the player capsule doesn't collide/trip over it
+  const colliderDesc = R.ColliderDesc.cuboid(w / 2, h / 2, d / 2).setSensor(true);
+  const collider = world.createCollider(colliderDesc, rb);
+
+  // 4. Save the configuration data for your movement script to read
+  const padConfig = {
+    x, y, z,
+    w, d,
+    force: { x: launchX, y: launchY, z: launchZ }
+  };
+  
+  activeLaunchPads.push(padConfig);
+  return mesh;
+}
+
 function createRigidMesh(scene, world, R, x, y, z, w, h, d, material, rx = 0, ry = 0, rz = 0, castShadow = true) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   mesh.position.set(x, y, z);
@@ -158,6 +190,13 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
     { x: (HALF_MAP + 32) / 2, z: 0, w: HALF_MAP - 32, d: avW },
     { x: -(HALF_MAP + 32) / 2, z: 0, w: HALF_MAP - 32, d: avW }
   ];
+  // Example 1: Place a pad in the Residential Sector that flings you North onto the Apartment roof
+// Arguments: (scene, world, R, X, Y, Z, Width, Depth, LaunchX, LaunchY, LaunchZ)
+buildJumper(scene, world, R, -74, 0.1, 95, 4, 4, 0, 18, -15); 
+
+// Example 2: Place a pad near the center plaza that launches you across the street eastward
+buildJumper(scene, world, R, -20, 0.1, 0, 4, 4, 25, 12, 0);
+  
   roads.forEach(r => {
     const track = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.d), pathMat);
     track.rotation.x = -Math.PI / 2; track.position.set(r.x, 0.02, r.z); track.receiveShadow = true; scene.add(track);
