@@ -474,6 +474,23 @@ async function main(){
   });
 
     // ── SHOOTING LOGIC (ACCURATE TARGETING TRACKING) ───────────────────────────
+ // ── FIRE BUTTON EVENT LISTENERS ──────────────────────────────────────────────
+const fireBtn = document.getElementById('fir');
+
+// Handle Mobile Touch
+fireBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  fireWeapon();
+}, { passive: false });
+
+// Handle Desktop Left-Click (Optional but highly recommended for testing)
+window.addEventListener('mousedown', (e) => {
+  // Only fire if clicking the game canvas (not clicking UI buttons like RUN/JUMP)
+  if (e.target.tagName === 'CANVAS') {
+    fireWeapon();
+  }
+});
+  
   function fireWeapon() {
     // 1. Get the direction the camera is looking
     const cameraDirection = new THREE.Vector3();
