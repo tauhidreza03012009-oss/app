@@ -8,7 +8,7 @@ function spawnBlock(scene, world, R, x, z, size, height, material, castShadow = 
   mesh.position.set(x, y, z);
   mesh.castShadow = castShadow;
   mesh.receiveShadow = true;
-  scene.add(mesh);
+  scene.add(mesh); 
 
   const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z));
   world.createCollider(R.ColliderDesc.cuboid(size / 2, height / 2, size / 2), rb);
