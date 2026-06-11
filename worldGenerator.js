@@ -3,8 +3,6 @@ import { grassMat, pathMat, woodMat, roofMat, leafMat, stoneMat, crateMat, borde
 
 export const activeLaunchPads = [];
 
-// ── NEW MATHEMATICAL LAUNCHPAD SYSTEM ─────────────────────────────────────────
-// Calculates velocity automatically based on target height, forward range distance, and travel time!
 export function buildJumper(scene, world, R, x, y, z, targetX, targetY, targetZ, duration = 0.8) {
   const w = 5, d = 5, h = 0.2;
   
@@ -17,14 +15,11 @@ export function buildJumper(scene, world, R, x, y, z, targetX, targetY, targetZ,
   const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z));
   world.createCollider(R.ColliderDesc.cuboid(w / 2, h / 2, d / 2).setSensor(true), rb);
 
-  // Math translation calculating raw speed to hit coordinates smoothly over the timeline
   const dx = targetX - x;
   const dz = targetZ - z;
   
   const velocityX = dx / duration;
   const velocityZ = dz / duration;
-  
-  // Calculate continuous ascent vector to counteract gravitational drag instantly
   const velocityY = ((targetY - y) / duration) + (14 * duration);
 
   activeLaunchPads.push({
@@ -123,7 +118,6 @@ function buildStreetLight(scene, world, R, x, z, ry = 0) {
   createRigidMesh(scene, world, R, x + Math.sin(ry) * 1.6, 7.8, z + Math.cos(ry) * 1.6, 0.5, 0.2, 0.5, stoneMat, 0, ry, 0, false);
 }
 
-// ── WORLD BUILD EXECUTION ───────────────────────────────────────────────────
 export function buildMapLayout(scene, world, R, MAP_SIZE) {
   const HALF_MAP = MAP_SIZE / 2;
   const avW = 24;
@@ -173,62 +167,50 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   createRigidMesh(scene, world, R, 0, 14.5, 0, 3.8, 18.0, 3.8, stoneMat);
   createRigidMesh(scene, world, R, 0, 24.0, 0, 2.4, 1.0, 2.4, woodMat);
 
-  // ── QUADRANT 1: HOLLOW RESIDENTIAL MODULES (NORTH-WEST) ──────────────────────
+  // NW
   const nwGrass = new THREE.Mesh(new THREE.PlaneGeometry(108, 108), grassMat); nwGrass.rotation.x = -Math.PI / 2; nwGrass.position.set(-70, 0.03, 70); scene.add(nwGrass);
-
-  buildExplorableApartment(scene, world, R, -74, 116, 24, 5.5, 22, 4);  // Roof height: ~22
-  buildExplorableApartment(scene, world, R, -114, 116, 24, 5.5, 22, 4); // Roof height: ~22
-
+  buildExplorableApartment(scene, world, R, -74, 116, 24, 5.5, 22, 4);
+  buildExplorableApartment(scene, world, R, -114, 116, 24, 5.5, 22, 4);
   createRigidMesh(scene, world, R, -38, 4.5, 42, 12, 9, 14, woodMat, 0, Math.PI / 2, 0);
   createRigidMesh(scene, world, R, -38, 4.5, 59, 12, 9, 14, woodMat, 0, Math.PI / 2, 0);
   createRigidMesh(scene, world, R, -38, 4.5, 76, 12, 9, 14, woodMat, 0, Math.PI / 2, 0);
   createRigidMesh(scene, world, R, -38, 4.5, 93, 12, 9, 14, woodMat, 0, Math.PI / 2, 0);
-
   createRigidMesh(scene, world, R, -118, 4, 76, 16, 8, 22, borderMat, 0, 0, 0, false);
   createRigidMesh(scene, world, R, -120, 5, 78, 5, 10, 5, stoneMat);
   createRigidMesh(scene, world, R, -114, 3, 72, 4, 6, 4, crateMat);
 
-  // ── QUADRANT 2: CARGO GRID INDUSTRIAL FREIGHT YARD (SOUTH-WEST) ─────────────
+  // SW
   const swTarmac = new THREE.Mesh(new THREE.PlaneGeometry(108, 108), stoneMat); swTarmac.rotation.x = -Math.PI / 2; swTarmac.position.set(-70, 0.03, -70); scene.add(swTarmac);
-
-  createRigidMesh(scene, world, R, -68, 6, -54, 46, 12, 32, crateMat); // Roof height: 12
+  createRigidMesh(scene, world, R, -68, 6, -54, 46, 12, 32, crateMat);
   createRigidMesh(scene, world, R, -68, 12.3, -54, 48, 0.6, 34, roofMat);
-
   createRigidMesh(scene, world, R, -118, 2.5, -116, 14, 5, 7, roofMat);
   createRigidMesh(scene, world, R, -118, 7.5, -116, 14, 5, 7, crateMat);
   createRigidMesh(scene, world, R, -102, 2.5, -116, 14, 5, 7, borderMat);
   createRigidMesh(scene, world, R, -102, 7.5, -116, 14, 5, 7, woodMat);
   createRigidMesh(scene, world, R, -86, 2.5, -116, 14, 5, 7, crateMat);
   createRigidMesh(scene, world, R, -86, 7.5, -116, 14, 5, 7, roofMat);
-
   createRigidMesh(scene, world, R, -125, 7, -132, 12, 14, 12, stoneMat);
   createRigidMesh(scene, world, R, -109, 5, -132, 8, 10, 8, stoneMat);
-
   createRigidMesh(scene, world, R, -36, 1.5, -36, 3, 3, 3, woodMat);
   createRigidMesh(scene, world, R, -31, 1.5, -36, 3, 3, 3, woodMat);
 
-  // ── QUADRANT 3: DOWNTOWN COMMERCE SHOPS PLAZA (TOP-RIGHT) ───────────────────
+  // NE
   const nePlaza = new THREE.Mesh(new THREE.PlaneGeometry(108, 108), woodMat); nePlaza.rotation.x = -Math.PI / 2; nePlaza.position.set(70, 0.03, 70); scene.add(nePlaza);
-
-  createRigidMesh(scene, world, R, 112, 7.5, 48, 38, 15, 26, roofMat); // Roof height: 15
-
-  buildExplorableShop(scene, world, R, 54, 40, 16, 9, 14, woodMat); // Roof height: 9
+  createRigidMesh(scene, world, R, 112, 7.5, 48, 38, 15, 26, roofMat);
+  buildExplorableShop(scene, world, R, 54, 40, 16, 9, 14, woodMat);
   buildExplorableShop(scene, world, R, 54, 57, 16, 9, 14, borderMat);
   buildExplorableShop(scene, world, R, 54, 74, 16, 9, 14, stoneMat);
-
-  createRigidMesh(scene, world, R, 40, 15, 122, 18, 30, 18, stoneMat); // Roof height: 30
+  createRigidMesh(scene, world, R, 40, 15, 122, 18, 30, 18, stoneMat);
   createRigidMesh(scene, world, R, -40, 15, 122, 18, 30, 18, stoneMat);
   createRigidMesh(scene, world, R, 0, 28.5, 122, 62, 1.0, 6.5, borderMat);
 
-  // ── QUADRANT 4: CIVIC PARK & MUNICIPAL BANK ASSEMBLY (SOUTH-EAST) ───────────
+  // SE
   const seGrass = new THREE.Mesh(new THREE.PlaneGeometry(108, 108), grassMat); seGrass.rotation.x = -Math.PI / 2; seGrass.position.set(70, 0.03, -70); scene.add(seGrass);
-
-  createRigidMesh(scene, world, R, 66, 6, -54, 34, 13, 24, stoneMat); // Roof height: 13
+  createRigidMesh(scene, world, R, 66, 6, -54, 34, 13, 24, stoneMat);
   createRigidMesh(scene, world, R, 66, 14.5, -41, 34, 3.0, 4, roofMat);
   createRigidMesh(scene, world, R, 55, 6, -39, 1.2, 13, 1.2, borderMat);
   createRigidMesh(scene, world, R, 66, 6, -39, 1.2, 13, 1.2, borderMat);
   createRigidMesh(scene, world, R, 77, 6, -39, 1.2, 13, 1.2, borderMat);
-
   const ctH = 24;
   createRigidMesh(scene, world, R, 117.5, ctH / 2, -126.5, 0.8, ctH, 0.8, borderMat);
   createRigidMesh(scene, world, R, 126.5, ctH / 2, -126.5, 0.8, ctH, 0.8, borderMat);
@@ -237,37 +219,20 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   createRigidMesh(scene, world, R, 122, 6, -122, 9.8, 0.4, 9.8, borderMat, 0, 0, 0, false);
   createRigidMesh(scene, world, R, 122, 12, -122, 9.8, 0.4, 9.8, borderMat, 0, 0, 0, false);
   createRigidMesh(scene, world, R, 122, ctH, -122, 11.5, 0.4, 11.5, woodMat);
-  createRigidMesh(scene, world, R, 122, ctH + 5.0, -122, 8.5, 10.0, 8.5, stoneMat); // Roof height: 35
+  createRigidMesh(scene, world, R, 122, ctH + 5.0, -122, 8.5, 10.0, 8.5, stoneMat);
   createRigidMesh(scene, world, R, 122, ctH + 10.6, -122, 9.2, 1.4, 9.2, roofMat);
 
-  // ── GLOBAL TARGETED LAUNCHPAD PLACEMENTS (EVERY BUILDING COVERED!) ──────────
-  // Arguments: (scene, world, R, launchX, launchY, launchZ, targetX, targetY, targetZ, duration)
-
-  // 1. To North-West Apartment Roof Deck
+  // ── LAUNCHPAD DESTINATIONS ──────────────────────────────────────────────────
   buildJumper(scene, world, R, -74, 0.2, 82, -74, 23.5, 116, 0.95);
-
-  // 2. To North-West Twin Apartment Roof Deck
   buildJumper(scene, world, R, -114, 0.2, 82, -114, 23.5, 116, 0.95);
-
-  // 3. To Freight Yard Industrial Warehouse Roof (South-West)
   buildJumper(scene, world, R, -68, 0.2, -26, -68, 14.0, -54, 0.80);
-
-  // 4. To Downtown Commerce Shop Roof (Top-Right)
   buildJumper(scene, world, R, 30, 0.2, 40, 54, 11.0, 40, 0.70);
-
-  // 5. To Massive Skyscraper Plaza Roof (Far Right)
   buildJumper(scene, world, R, 82, 0.2, 48, 112, 16.5, 48, 0.85);
-
-  // 6. To Civic Assembly Bank Pillar Deck (South-East)
   buildJumper(scene, world, R, 66, 0.2, -24, 66, 15.5, -41, 0.75);
-
-  // 7. To High-Rise Spire Temple Top Balcony (Max Map Height Challenge!)
   buildJumper(scene, world, R, 122, 0.2, -90, 122, 36.5, -122, 1.20);
-
-  // 8. To Central Monument Tower Peak 
   buildJumper(scene, world, R, 0, 4.6, 24, 0, 25.5, 0, 0.90);
 
-  // ── STREET LIGHTS & ENVIRONMENT PROPS ─────────────────────────────────────────
+  // props
   buildStreetLight(scene, world, R, -15, 33, 0);
   buildStreetLight(scene, world, R, 15, 33, Math.PI);
   buildStreetLight(scene, world, R, -15, -33, 0);
