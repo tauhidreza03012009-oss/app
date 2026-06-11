@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { buildMapLayout } from './worldGenerator.js';
+import { activeLaunchPads } from './worldGenerator.js';
+
 
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
 const socket = io();
@@ -293,7 +295,40 @@ async function main(){
     const dt = Math.min(clock.getDelta(), 0.05); 
     world.timestep = 1 / 60; 
     frameCount++;
+// Create a global variable outside your loop to track launch status
+let launchCooldown = 0;
+let launchVelocity = { x: 0, y: 0, z: 0 };
 
+// INSIDE YOUR TICK / ANIMATION LOOP:
+if (launchCooldown > 0) {
+  launchCooldown -= deltaTime;
+  
+  // Apply the active launch forces directly to the player movement override
+  verticalVelocity = launchVelocity.y;
+  movementVector.x = launchVelocity.x;
+  movementVector.z = launchVelocity.z;
+} else {
+  // ── CHECK IF PLAYER STEPPED ON A JUMPER ──
+  const pPos = playerBody.translation();
+  
+  for (const pad of activeLaunchPads) {
+    // Check if player X/Z coordinates match the pad dimensions
+    const insideX = Math.abs(pPos.x - pad.x) < (pad.w / 2 + 0.5);
+    const insideZ = Math.abs(pPos.z - pad.z) < (pad.d / 2 + 0.5);
+    const insideY = Math.abs(pPos.y - pad.y) < 1.5; // Close to ground level
+
+    if (insideX && insideZ && insideY) {
+      // Trigger Launch!
+      launchVelocity = { ...pad.force };
+      launchCooldown = 0.45; // Lock manual inputs for 0.45 seconds during flight
+      
+      // Seed vertical velocity immediately to crack character ground lock
+      verticalVelocity = pad.force.y;
+      break;
+    }
+  }
+    }
+      
     let ix = jx, iy = jy;
     if(K['KeyA'] || K['ArrowLeft'])  ix = -1;
     if(K['KeyD'] || K['ArrowRight']) ix =  1;
