@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>3D Mega Arena - Multi-Room Prediction Edition</title>
+<title>3D Mega Arena - Village Edition</title>
 <link rel="manifest" href="./manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;}
@@ -49,6 +49,29 @@ canvas{display:block;width:100%!important;height:100%!important;touch-action:non
   color:#fff;
   box-shadow:0 0 25px rgba(0,0,0,0.3);
 }
+#fir {
+  position:fixed;bottom:30px;right:125px;width:80px;height:80px;
+  border-radius:50%;z-index:99;
+  background:rgba(255,53,94,0.1);
+  border:2px solid rgba(255,53,94,0.4);
+  box-shadow:0 0 15px rgba(255,53,94,0.15);
+  display:flex;align-items:center;justify-content:center;
+  font-family:monospace;color:#ff355e;font-size:11px;letter-spacing:2px;
+  touch-action:none;font-weight:bold;
+}
+#fir:active {
+  background:rgba(255,53,94,0.4);
+  color:#fff;
+}
+#leaderboard {
+  position:fixed;top:20px;left:20px;background:rgba(0,0,0,0.5);
+  color:#fff;padding:12px;font-family:monospace;border-radius:6px;
+  z-index:99;font-size:12px;letter-spacing:1px;min-width:140px;
+  pointer-events:none;box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+#scores-list div {
+  margin-top:4px;color:#00e5ff;
+}
 #loading{
   position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:#f0f4f8;z-index:9999;font-family:monospace;
@@ -65,21 +88,27 @@ canvas{display:block;width:100%!important;height:100%!important;touch-action:non
 <div id="jst"><div id="jsk"></div></div>
 <div id="jmp">JUMP</div>
 <div id="run">RUN</div>
-    <script>
-        if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registered!', reg))
-            .catch(err => console.error('Service Worker registration failed', err));
+<div id="fir">FIRE</div>
+<div id="leaderboard">
+  <div style="border-bottom:1px solid rgba(255,255,255,0.3);padding-bottom:4px;font-weight:bold;">LEADERBOARD</div>
+  <div id="scores-list"></div>
+</div>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker registered!', reg))
+                .catch(err => console.error('Service Worker registration failed', err));
+        });
+    }
+    window.addEventListener('error', function(e) {
+        alert("Crash Log:\nMessage: " + e.message + "\nFile: " + e.filename + "\nLine: " + e.lineno);
     });
-        }
-        window.addEventListener('error', function(e) {
-            alert("Crash Log:\nMessage: " + e.message + "\nFile: " + e.filename + "\nLine: " + e.lineno);
-        });
-        window.addEventListener('unhandledrejection', function(e) {
-            alert("Promise Crash:\nReason: " + e.reason);
-        });
-    </script>
+    window.addEventListener('unhandledrejection', function(e) {
+        alert("Promise Crash:\nReason: " + e.reason);
+    });
+</script>
 <script src="/socket.io/socket.io.js"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 <script type="module">
@@ -89,7 +118,7 @@ import * as THREE from 'three';
 const socket = io();
 let myNetworkId = null;
 const remotePlayers = {}; 
-const targetStates = {}; // Stores server positional goals for interpolation
+const targetStates = {}; 
 
 // ── SHARED STATE ──────────────────────────────────────────────────────────────
 let vy = 0;
@@ -118,7 +147,7 @@ jstEl.addEventListener('touchcancel',e=>{for(const t of e.changedTouches)if(t.id
 // ── JUMP BUTTON ───────────────────────────────────────────────────────────────
 document.getElementById('jmp').addEventListener('touchstart',e=>{
   e.preventDefault();
-  if(vy===0) vy=22;
+  if(vy===0) vy=11;
 },{passive:false});
 
 // ── RUN BUTTON ────────────────────────────────────────────────────────────────
@@ -138,6 +167,8 @@ window.addEventListener('touchstart',e=>{
     if(t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom) continue;
     const jr=document.getElementById('jmp').getBoundingClientRect();
     if(t.clientX>=jr.left&&t.clientX<=jr.right&&t.clientY>=jr.top&&t.clientY<=jr.bottom) continue;
+    const fr=document.getElementById('fir').getBoundingClientRect();
+    if(t.clientX>=fr.left&&t.clientX<=fr.right&&t.clientY>=fr.top&&t.clientY<=fr.bottom) continue;
     if(cId===-1){cId=t.identifier;cLx=t.clientX;cLy=t.clientY;}
   }
 });
@@ -186,18 +217,16 @@ async function main(){
   renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 
   const scene=new THREE.Scene();
-  scene.background=new THREE.Color(0xffffff); 
-  scene.fog=new THREE.FogExp2(0xffffff,0.001); 
+  scene.background=new THREE.Color(0xcce0ff); 
+  scene.fog=new THREE.FogExp2(0xcce0ff,0.0015); 
   const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,500); 
 
+  const minimapCamera = new THREE.OrthographicCamera(-190, 190, 190, -190, 1, 500);
+  minimapCamera.position.set(0, 200, 0);
+  minimapCamera.lookAt(0, 0, 0);       
 
-
-const minimapCamera = new THREE.OrthographicCamera(-190, 190, 190, -190, 1, 500);
-minimapCamera.position.set(0, 200, 0);
-minimapCamera.lookAt(0, 0, 0);       
-
-  scene.add(new THREE.AmbientLight(0xffffff,0.9));
-  const sun=new THREE.DirectionalLight(0xffffff,0.8);
+  scene.add(new THREE.AmbientLight(0xffffff,0.8));
+  const sun=new THREE.DirectionalLight(0xffffff,0.9);
   sun.position.set(100,200,80);
   sun.castShadow=true;
   sun.shadow.camera.left=-160;sun.shadow.camera.right=160;
@@ -210,7 +239,6 @@ minimapCamera.lookAt(0, 0, 0);
   const world=new R.World({x:0,y:-32,z:0});
 
   // ── VILLAGE ENVIRONMENT SETUP ────────────────────────────────────────────────
-  // Color palette updates to create an outdoor nature look
   const grassMat   = new THREE.MeshStandardMaterial({color: 0x4c7c4c, roughness: 0.9});
   const pathMat    = new THREE.MeshStandardMaterial({color: 0xdfc49f, roughness: 0.8});
   const woodMat    = new THREE.MeshStandardMaterial({color: 0x6f4e37, roughness: 0.7});
@@ -222,7 +250,7 @@ minimapCamera.lookAt(0, 0, 0);
 
   const MAP_SIZE = 360;
   const floorGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
-  const floorMesh = new THREE.Mesh(floorGeo, grassMat); // Now vibrant green grass
+  const floorMesh = new THREE.Mesh(floorGeo, grassMat); 
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.receiveShadow = true;
   scene.add(floorMesh);
@@ -230,108 +258,85 @@ minimapCamera.lookAt(0, 0, 0);
   const fBody = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0, -0.5, 0));
   world.createCollider(R.ColliderDesc.cuboid(MAP_SIZE / 2, 0.5, MAP_SIZE / 2), fBody);
 
-  // Core function to spawn rectangular structures
-  function addStaticWall(x, y, z, w, h, d, material = borderMat) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
-    mesh.position.set(x, y, z);
-    mesh.castShadow = true; mesh.receiveShadow = true;
+  function addStaticWall(x,y,z,w,h,d,material=borderMat){
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+    mesh.position.set(x,y,z);
+    mesh.castShadow=true;mesh.receiveShadow=true;
     scene.add(mesh);
-    const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z));
-    world.createCollider(R.ColliderDesc.cuboid(w / 2, h / 2, d / 2), rb);
+    const rb=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x,y,z));
+    world.createCollider(R.ColliderDesc.cuboid(w/2,h/2,d/2),rb);
   }
 
-  // Helper to draw flat paths/roads on the ground (no physics required)
   function addPath(x, z, w, d) {
     const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), pathMat);
     pathMesh.rotation.x = -Math.PI / 2;
-    pathMesh.position.set(x, 0.02, z); // Layered slightly above grass to prevent flickering
+    pathMesh.position.set(x, 0.02, z); 
     pathMesh.receiveShadow = true;
     scene.add(pathMesh);
   }
 
-  // ── VILLAGE ASSET GENERATORS ───────────────────────────────────────────────
-  
-  // 1. Procedural House (with tiered roof layers so players can climb up)
   function addHouse(x, z, w = 14, h = 9, d = 14) {
-    // Main structural frame
     addStaticWall(x, h / 2, z, w, h, d, woodMat);
-    // Overhanging tier 1 roof
     addStaticWall(x, h + 1, z, w + 2, 2, d + 2, roofMat);
-    // Upper tier 2 roof peak
     addStaticWall(x, h + 2.5, z, w - 2, 1.5, d - 2, roofMat);
   }
 
-  // 2. Low-Poly Blocky Trees
   function addTree(x, z, trunkH = 5) {
-    // Main vertical wood trunk
     addStaticWall(x, trunkH / 2, z, 1.5, trunkH, 1.5, woodMat);
-    // Dense foliage block layers
     addStaticWall(x, trunkH + 2, z, 6, 4, 6, leafMat);
     addStaticWall(x, trunkH + 4.5, z, 4, 2, 4, leafMat);
   }
 
-  // 3. Jump Crates (Parkour tools scattered next to buildings)
   function addCrate(x, z, size = 3) {
     addStaticWall(x, size / 2, z, size, size, size, crateMat);
   }
 
-  // 4. Central Gathering Well
   function addTownWell(x, z) {
     addStaticWall(x - 3, 2, z, 1, 4, 7, stoneMat);
     addStaticWall(x + 3, 2, z, 1, 4, 7, stoneMat);
     addStaticWall(x, 2, z - 3, 5, 4, 1, stoneMat);
     addStaticWall(x, 2, z + 3, 5, 4, 1, stoneMat);
-    // Roof support beams
     addStaticWall(x - 2, 5.5, z, 0.5, 3, 0.5, woodMat);
     addStaticWall(x + 2, 5.5, z, 0.5, 3, 0.5, woodMat);
-    // Canopy roof
     addStaticWall(x, 7.5, z, 6, 1, 7, roofMat);
   }
 
-  // ── MAP DESIGN LAYOUT ──────────────────────────────────────────────────────
-  // Perimeter boundaries keeping players inside the map
-  const H_WALL = 16; const HALF_M = MAP_SIZE / 2;
+  // Borders
+  const H_WALL = 16; const HALF_M = MAP_SIZE/2;
   addStaticWall(0, H_WALL / 2, HALF_M, MAP_SIZE, H_WALL, 4);   
   addStaticWall(0, H_WALL / 2, -HALF_M, MAP_SIZE, H_WALL, 4);  
   addStaticWall(HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE);   
   addStaticWall(-HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE);  
 
-  // Roads & Central Plaza Layout
-  addPath(0, 0, 30, 30);         // Center Plaza
-  addPath(0, 80, 14, 130);       // North Road
-  addPath(0, -80, 14, 130);      // South Road
-  addPath(80, 0, 130, 14);       // East Road
-  addPath(-80, 0, 130, 14);      // West Road
+  // Roads
+  addPath(0, 0, 30, 30);         
+  addPath(0, 80, 14, 130);       
+  addPath(0, -80, 14, 130);      
+  addPath(80, 0, 130, 14);       
+  addPath(-80, 0, 130, 14);      
 
-  // Place the central landmark
   addTownWell(0, 0);
 
-  // Neighborhood Districts (Houses + Parkour Crates)
-  // North West District
+  // Houses & Crates
   addHouse(-35, 35, 16, 10, 16);
   addCrate(-23, 30, 3);
-  addCrate(-23, 33, 5); // Double height crate stack to reach the roof
+  addCrate(-23, 33, 5); 
 
-  // North East District
   addHouse(35, 40, 14, 9, 14);
   addCrate(25, 40, 3);
 
-  // South West District
   addHouse(-40, -35, 14, 9, 18);
   addCrate(-40, -23, 4);
 
-  // South East District (The Mansion / Tallest House)
   addHouse(45, -45, 20, 14, 20);
   addCrate(32, -45, 4);
   addCrate(32, -40, 8);
 
-  // Outpost Homes
   addHouse(-90, 35, 16, 10, 14);
   addHouse(90, -35, 14, 9, 16);
   addHouse(-100, -80, 18, 11, 14);
   addHouse(100, 80, 16, 10, 16);
 
-  // Forest foliage population (Breaks lines-of-sight and adds cover)
   const treeLocations = [
     [-15, 25], [15, 25], [-20, -25], [25, -20],
     [-70, 40], [70, -40], [40, 80], [-40, -80],
@@ -339,7 +344,6 @@ minimapCamera.lookAt(0, 0, 0);
     [-140, 20], [140, -20], [-20, 140], [20, -140]
   ];
   treeLocations.forEach(loc => addTree(loc[0], loc[1], 4 + Math.random() * 3));
-
 
   // ── PLAYER SETUP ────────────────────────────────────────────────────────────
   const PH=1.8,PR=0.35;
@@ -369,7 +373,6 @@ minimapCamera.lookAt(0, 0, 0);
   visor.position.set(0,1.4,-0.25);
   player.add(visor);
 
-  // Helper to spawn clones
   function createRemotePlayerMesh() {
     const group = new THREE.Group();
     const body = new THREE.Mesh(
@@ -390,31 +393,37 @@ minimapCamera.lookAt(0, 0, 0);
     return group;
   }
 
-  // ── NETWORKING LISTENERS WITH RECONCILIATION BUFFERING ──────────────────────
+  // ── NETWORKING LISTENERS ─────────────────────────────────────────────────────
   socket.on('init', (id) => {
     myNetworkId = id;
     console.log("Connected. Unique ID:", myNetworkId);
   });
 
-  // 🚀 REPLACE WITH THIS LOOSE CLIENT-AUTHORITATIVE LOOKUP:
-// 🚀 REPLACE WITH THIS LOOSE CLIENT-AUTHORITATIVE LOOKUP:
-socket.on('tick', (serverPlayers) => {
-  for (const id in serverPlayers) {
-    // Completely bypass parsing your own networking id!
-    // This stops the server from overriding your local physics movements.
-    if (id === myNetworkId) continue;
+  socket.on('tick', (serverPlayers) => {
+    // Live Leaderboard UI Updater
+    const listEl = document.getElementById('scores-list');
+    if (listEl) {
+      let listHTML = '';
+      for (const id in serverPlayers) {
+        const tag = (id === myNetworkId) ? "You" : `Player_${id.substring(0, 4)}`;
+        const pts = serverPlayers[id].score || 0;
+        listHTML += `<div>${tag}: <b>${pts}</b></div>`;
+      }
+      listEl.innerHTML = listHTML;
+    }
 
-    const pData = serverPlayers[id];
-    if (!remotePlayers[id]) {
-      remotePlayers[id] = createRemotePlayerMesh();
+    for (const id in serverPlayers) {
+      if (id === myNetworkId) continue;
+
+      const pData = serverPlayers[id];
+      if (!remotePlayers[id]) {
+        remotePlayers[id] = createRemotePlayerMesh();
+        targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
+      }
+      
       targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
     }
-    
-    // Store targeted position parameters received from the backend
-    targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
-  }
-});
-
+  });
 
   socket.on('removePlayer', (id) => {
     if (remotePlayers[id]) {
@@ -422,6 +431,65 @@ socket.on('tick', (serverPlayers) => {
       delete remotePlayers[id];
       delete targetStates[id];
     }
+  });
+
+  socket.on('respawn', () => {
+    const rx = (Math.random() - 0.5) * 60;
+    const rz = (Math.random() - 0.5) * 60;
+    pBody.setTranslation({ x: rx, y: 15, z: rz }, true);
+    vy = 0; 
+  });
+
+  // ── SHOOTING LOGIC ───────────────────────────────────────────────────────────
+  function fireWeapon() {
+    const origin = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+    const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
+    
+    const maxRange = 50;
+    const endPoint = origin.clone().add(direction.clone().multiplyScalar(maxRange));
+    
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([origin, endPoint]);
+    const lineMat = new THREE.LineBasicMaterial({color: 0xff355e, linewidth: 4});
+    const tracer = new THREE.Line(lineGeo, lineMat);
+    scene.add(tracer);
+    
+    setTimeout(() => scene.remove(tracer), 60);
+
+    let closestTarget = null;
+    let closestDist = maxRange;
+
+    for (const id in remotePlayers) {
+      const remoteP = remotePlayers[id];
+      const targetPos = remoteP.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+      const toTarget = targetPos.clone().sub(origin);
+      const projection = toTarget.dot(direction);
+      
+      if (projection < 0) continue; 
+
+      const closestPointOnRay = origin.clone().add(direction.clone().multiplyScalar(projection));
+      const lateralDist = targetPos.distanceTo(closestPointOnRay);
+
+      if (lateralDist < 1.2) { 
+        const distance = origin.distanceTo(targetPos);
+        if (distance < closestDist) {
+          closestDist = distance;
+          closestTarget = id;
+        }
+      }
+    }
+
+    if (closestTarget) {
+      socket.emit('shoot', closestTarget);
+    }
+  }
+
+  document.getElementById('fir').addEventListener('touchstart', (e) => { 
+    e.preventDefault(); 
+    fireWeapon(); 
+  }, {passive:false});
+  
+  window.addEventListener('keydown', (e) => { 
+    if (e.code === 'KeyE' || e.code === 'Enter') fireWeapon(); 
   });
 
   // ── CHARACTER CONTROLLER PHYSICS ─────────────────────────────────────────────
@@ -454,6 +522,9 @@ socket.on('tick', (serverPlayers) => {
     const elapsed=clock.elapsedTime;
     const dt=Math.min(clock.getDelta(), 0.05); 
 
+    // Sync Rapier steps perfectly with dynamic frame rate to remove physical jitter
+    world.timestep = dt;
+
     let ix=jx,iy=jy;
     if(K['KeyA']||K['ArrowLeft'])  ix=-1;
     if(K['KeyD']||K['ArrowRight']) ix= 1;
@@ -474,8 +545,6 @@ socket.on('tick', (serverPlayers) => {
 
     const desiredMove={x:mx*speed, y:vy*dt, z:mz*speed};
 
-    // 🚀 CLIENT-SIDE PREDICTION ACTIVE: 
-    // We compute local physics and render inputs instantly without waiting for network replies!
     controller.computeColliderMovement(pCollider, desiredMove);
     const corrected=controller.computedMovement();
 
@@ -499,7 +568,6 @@ socket.on('tick', (serverPlayers) => {
       player.rotation.y = Math.atan2(mx, mz);
     }
 
-    // High frequency position broadcast outbound
     if (socket.connected) {
       socket.emit('move', {
         x: player.position.x,
@@ -509,10 +577,8 @@ socket.on('tick', (serverPlayers) => {
       });
     }
 
-    // ── INTERPOLATE OPPOSING REMOTE PLAYERS ──────────────────────────────────
     for (const id in remotePlayers) {
       if (targetStates[id]) {
-        // Smoothly blend positional matrices by 20% increments each frame step
         remotePlayers[id].position.x += (targetStates[id].x - remotePlayers[id].position.x) * 0.20;
         remotePlayers[id].position.y += (targetStates[id].y - remotePlayers[id].position.y) * 0.20;
         remotePlayers[id].position.z += (targetStates[id].z - remotePlayers[id].position.z) * 0.20;
@@ -520,7 +586,6 @@ socket.on('tick', (serverPlayers) => {
       }
     }
 
-    // Cam focus processing
     lookAt.set(p.x, p.y - PH/2 + 1.2, p.z);
     const idealX = p.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
     const idealY = p.y - PH/2 + 1.2 + Math.sin(camPitch) * 7.5;
@@ -535,11 +600,7 @@ socket.on('tick', (serverPlayers) => {
 
     if (hit) {
       const safeDist = Math.max(0.4, hit.toi - 0.15);
-      camPos.set(
-        lookAt.x + rayDir.x * safeDist,
-        lookAt.y + rayDir.y * safeDist,
-        lookAt.z + rayDir.z * safeDist
-      );
+      camPos.set(lookAt.x + rayDir.x * safeDist, lookAt.y + rayDir.y * safeDist, lookAt.z + rayDir.z * safeDist);
     } else {
       camPos.set(idealX, idealY, idealZ);
     }
@@ -548,40 +609,35 @@ socket.on('tick', (serverPlayers) => {
       camera.position.copy(camPos); 
       firstFrame=false; 
     } else { 
-      camera.position.lerp(camPos, 0.35); 
+      // Frame-rate independent lerp using exponential decay
+      camera.position.lerp(camPos, 1 - Math.exp(-18 * dt)); 
     }
 
     camera.lookAt(lookAt);
     ring.rotation.z=elapsed*2;
-        // ── RENDER SYSTEM ────────────────────────────────────────────────────────
-    // 1. Render the main 3D Game View (Full Screen)
+
+    // ── RENDER SYSTEM ────────────────────────────────────────────────────────
     renderer.setViewport(0, 0, innerWidth, innerHeight);
     renderer.setScissor(0, 0, innerWidth, innerHeight);
     renderer.setScissorTest(true);
     renderer.render(scene, camera);
 
-    // 2. Render the 2D Minimap View (Top-Right Corner)
-    const mapSize = Math.min(innerWidth, innerHeight) * 0.25; // Minimap takes up 25% of screen size
-    const mapX = innerWidth - mapSize - 20;                   // 20px padding from the right edge
-    const mapY = innerHeight - mapSize - 20;                  // 20px padding from the top edge
+    const mapSize = Math.min(innerWidth, innerHeight) * 0.25; 
+    const mapX = innerWidth - mapSize - 20;                   
+    const mapY = innerHeight - mapSize - 20;                  
 
-    // Keep the minimap camera perfectly centered directly above YOUR player capsule
     minimapCamera.position.set(player.position.x, 200, player.position.z);
     minimapCamera.lookAt(player.position.x, player.position.y, player.position.z);
 
-    // Render the minimap cutout box
     renderer.setViewport(mapX, mapY, mapSize, mapSize);
     renderer.setScissor(mapX, mapY, mapSize, mapSize);
     renderer.setScissorTest(true);
     
-    // Clear the background of the minimap box to make it stand out slightly
     renderer.setClearColor(0xeef2f7); 
-    renderer.clearDepth(); // Prevents 3D elements from clipping out
+    renderer.clearDepth(); 
     renderer.render(scene, minimapCamera);
     
-    // Reset background color for the main frame canvas loop
     renderer.setClearColor(0xffffff); 
-
   }
   frame();
 }
