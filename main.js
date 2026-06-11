@@ -154,7 +154,6 @@ async function main(){
   const world = new R.World({x: 0, y: -32, z: 0});
   const MAP_SIZE = 360;
 
-  // CALLING THE SEPARATED GENERATOR HERE
   buildMapLayout(scene, world, R, MAP_SIZE);
 
   // ── PLAYER OBJECT GRAPHICS ───────────────────────────────────────────────────
@@ -232,7 +231,8 @@ async function main(){
     const rayDir = raycaster.ray.direction.clone().normalize();
     const rayOrigin = raycaster.ray.origin.clone();
     
-    player.rotation.y = Math.atan2(rayDir.x, rayDir.z);
+    // CAMERA FIX: Adjust target aim rotation alignment to avoid snapping backwards
+    player.rotation.y = Math.atan2(rayDir.x, -rayDir.z);
 
     const maxRange = 120;
     const targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
@@ -302,8 +302,9 @@ async function main(){
     if(running && !hasInput) iy = -1;
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
-    const mx = ix * Math.cos(camYaw)-iy * Math.sin(camYaw);
-    const mz = ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
+    // CAMERA FIX: Accurate trigonometric vectors relative to look view matrix orientation
+    const mx = ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
+    const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
     vy -= 28 * dt; 
 
@@ -325,8 +326,10 @@ async function main(){
     world.step();
 
     player.position.set(pos.x + corrected.x, (pos.y + corrected.y) - PH / 2, pos.z + corrected.z);
+    
+    // CAMERA FIX: Invert the Z input index matrix inside atan2 so the capsule turns forward away from lens view
     if(hasInput || (running && !hasInput)) {
-      player.rotation.y = Math.atan2(mx, mz);
+      player.rotation.y = Math.atan2(mx, -mz);
     }
 
     if (socket.connected) {
