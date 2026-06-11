@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildMapLayout } from './worldGenerator.js';
 
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
 const socket = io();
@@ -129,7 +130,6 @@ async function main(){
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  
   const skyColor = 0xaaccff;
   scene.background = new THREE.Color(skyColor); 
   scene.fog = new THREE.FogExp2(skyColor, 0.003); 
@@ -152,144 +152,10 @@ async function main(){
 
   // ── PHYSICS SETUP ────────────────────────────────────────────────────────────
   const world = new R.World({x: 0, y: -32, z: 0});
-
-  // ── PALETTE MATERIAL CONFIG ───────────────────────────────────────────────────
-  const grassMat  = new THREE.MeshStandardMaterial({color: 0x4c7c4c, roughness: 0.9});
-  const pathMat   = new THREE.MeshStandardMaterial({color: 0xdfc49f, roughness: 0.8});
-  const woodMat   = new THREE.MeshStandardMaterial({color: 0x6f4e37, roughness: 0.7});
-  const roofMat   = new THREE.MeshStandardMaterial({color: 0xb23b3b, roughness: 0.6});
-  const leafMat   = new THREE.MeshStandardMaterial({color: 0x2e5c2e, roughness: 0.9});
-  const stoneMat  = new THREE.MeshStandardMaterial({color: 0x7a828a, roughness: 0.6});
-  const crateMat  = new THREE.MeshStandardMaterial({color: 0xc69c6d, roughness: 0.5});
-  const borderMat = new THREE.MeshStandardMaterial({color: 0x2b3e2b, roughness: 0.9});
-
   const MAP_SIZE = 360;
-  const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE), grassMat); 
-  floorMesh.rotation.x = -Math.PI / 2;
-  floorMesh.receiveShadow = true;
-  scene.add(floorMesh);
 
-  const fBody = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0, -0.5, 0));
-  world.createCollider(R.ColliderDesc.cuboid(MAP_SIZE / 2, 0.5, MAP_SIZE / 2), fBody);
-
-  // ── PROCEDURAL LEVEL DESIGN GENERATORS ───────────────────────────────────────
-  function addStaticWall(x, y, z, w, h, d, material = borderMat){
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
-    mesh.position.set(x, y, z);
-    mesh.castShadow = true; mesh.receiveShadow = true;
-    scene.add(mesh);
-    const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z));
-    world.createCollider(R.ColliderDesc.cuboid(w / 2, h / 2, d / 2), rb);
-  }
-
-  function addPath(x, z, w, d) {
-    const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), pathMat);
-    pathMesh.rotation.x = -Math.PI / 2;
-    pathMesh.position.set(x, 0.02, z); 
-    pathMesh.receiveShadow = true;
-    scene.add(pathMesh);
-  }
-
-  function addHouse(x, z, w = 14, h = 9, d = 14) {
-    addStaticWall(x, h / 2, z, w, h, d, woodMat);
-    addStaticWall(x, h + 0.2, z, w + 1, 0.4, d + 1, roofMat);
-  }
-
-  function addTree(x, z, trunkH = 5) {
-    addStaticWall(x, trunkH / 2, z, 1.2, trunkH, 1.2, woodMat);
-    addStaticWall(x, trunkH + 2, z, 5, 4, 5, leafMat);
-  }
-
-  function addCrate(x, z, size = 3) {
-    addStaticWall(x, size / 2, z, size, size, size, crateMat);
-  }
-
-  function addRamp(x, y, z, w, h, d, rx = 0.26, ry = 0) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), woodMat);
-    mesh.position.set(x, y, z);
-    mesh.rotation.set(rx, ry, 0); 
-    mesh.castShadow = true; mesh.receiveShadow = true;
-    scene.add(mesh);
-
-    const q = new THREE.Quaternion().setFromEuler(mesh.rotation);
-    const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z).setRotation({x: q.x, y: q.y, z: q.z, w: q.w}));
-    world.createCollider(R.ColliderDesc.cuboid(w / 2, h / 2, d / 2), rb);
-  }
-
-  // SAFE BRIDGE BUILDER: Explicitly clears and locks horizontal rotations
-  function addSkyBridge(x, y, z, w, h, d, material = woodMat) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
-    mesh.position.set(x, y, z);
-    mesh.rotation.set(0, 0, 0); 
-    mesh.castShadow = true; mesh.receiveShadow = true;
-    scene.add(mesh);
-
-    const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z));
-    world.createCollider(R.ColliderDesc.cuboid(w / 2, h / 2, d / 2), rb);
-  }
-
-  function addSniperTower(x, z) {
-    const th = 11;
-    addStaticWall(x - 3, th / 2, z - 3, 0.5, th, 0.5, woodMat);
-    addStaticWall(x + 3, th / 2, z - 3, 0.5, th, 0.5, woodMat);
-    addStaticWall(x - 3, th / 2, z + 3, 0.5, th, 0.5, woodMat);
-    addStaticWall(x + 3, th / 2, z + 3, 0.5, th, 0.5, woodMat);
-    
-    addStaticWall(x, th, z, 7, 0.4, 7, woodMat);
-    
-    addStaticWall(x, th + 1, z - 3.4, 7, 1.5, 0.3, stoneMat);
-    addStaticWall(x, th + 1, z + 3.4, 7, 1.5, 0.3, stoneMat);
-    addStaticWall(x - 3.4, th + 1, z, 0.3, 1.5, 7, stoneMat);
-    addStaticWall(x + 3.4, th + 1, z, 0.3, 1.5, 7, stoneMat);
-  }
-
-  function addSkyDome() {
-    const geo = new THREE.SphereGeometry(260, 32, 15);
-    const mat = new THREE.MeshBasicMaterial({ color: 0x8fc2ff, side: THREE.BackSide, fog: false });
-    const dome = new THREE.Mesh(geo, mat);
-    scene.add(dome);
-  }
-
-  // ── WORLD MAP CONSTRUCTION AND LAYOUT ───────────────────────────────────────
-  const H_WALL = 16; const HALF_M = MAP_SIZE / 2;
-  addStaticWall(0, H_WALL / 2, HALF_M, MAP_SIZE, H_WALL, 4);   
-  addStaticWall(0, H_WALL / 2, -HALF_M, MAP_SIZE, H_WALL, 4);  
-  addStaticWall(HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE);   
-  addStaticWall(-HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE);  
-
-  addPath(0, 0, 35, 35);         
-  addPath(0, 80, 14, 130); addPath(0, -80, 14, 130);      
-  addPath(80, 0, 130, 14); addPath(-80, 0, 130, 14);      
-
-  addSkyDome();
-  addStaticWall(0, 2, 0, 8, 4, 8, stoneMat); 
-
-  addHouse(-35, 35, 16, 9, 16);  addCrate(-23, 28, 3);
-  addHouse(35, 40, 14, 9, 14);   addCrate(24, 38, 4);
-  addHouse(-40, -35, 14, 11, 18);
-  addHouse(45, -45, 20, 9, 20);
-
-  // Ramps
-  addRamp(-35, 4.2, 50, 4, 0.3, 17, -0.25, 0); 
-  addRamp(35, 4.2, 51, 4, 0.3, 17, -0.25, 0);  
-
-  // Sky Bridge System (Now using locked flat dimensions)
-  addSkyBridge(0, 9.2, 38, 54, 0.3, 3, woodMat);
-
-  // Sniper Outposts
-  addSniperTower(-75, 75);
-  addRamp(-75, 5.2, 63, 3, 0.3, 22, -0.25, 0); 
-
-  addSniperTower(75, -75);
-  addRamp(75, 5.2, -63, 3, 0.3, 22, 0.25, 0);  
-
-  addHouse(-90, 35, 16, 9, 14);  addHouse(90, -35, 14, 9, 16);
-  addHouse(-100, -80, 18, 9, 14); addHouse(100, 80, 16, 9, 16);
-
-  const treeLocations = [
-    [-15, 45], [15, 45], [-20, -45], [25, -40], [-70, 100], [70, -100], [110, 110], [-110, -110]
-  ];
-  treeLocations.forEach(loc => addTree(loc[0], loc[1], 5));
+  // CALLING THE SEPARATED GENERATOR HERE
+  buildMapLayout(scene, world, R, MAP_SIZE);
 
   // ── PLAYER OBJECT GRAPHICS ───────────────────────────────────────────────────
   const PH = 1.8, PR = 0.35;
@@ -422,13 +288,10 @@ async function main(){
   function frame(){
     requestAnimationFrame(frame);
     const elapsed = clock.elapsedTime;
-    
     const dt = Math.min(clock.getDelta(), 0.05); 
     world.timestep = 1 / 60; 
-
     frameCount++;
 
-    // 1. INPUT MATH
     let ix = jx, iy = jy;
     if(K['KeyA'] || K['ArrowLeft'])  ix = -1;
     if(K['KeyD'] || K['ArrowRight']) ix =  1;
@@ -439,7 +302,6 @@ async function main(){
     if(running && !hasInput) iy = -1;
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
-    // 2. INTERPOLATE DIRECTION ARRAYS
     const mx = -ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
     const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
@@ -460,16 +322,13 @@ async function main(){
       z: pos.z + corrected.z
     });
 
-    // 3. RESOLVE PHYSICS SIMULATION ENGINE STEP
     world.step();
 
-    // 4. MAP THREEJS TRANSLATIONS FROM THE SETTLED PHYSICAL OBJECT POSITION
     player.position.set(pos.x + corrected.x, (pos.y + corrected.y) - PH / 2, pos.z + corrected.z);
     if(hasInput || (running && !hasInput)) {
       player.rotation.y = Math.atan2(mx, mz);
     }
 
-    // 5. EMIT POSITION PACKETS TO SOCKET REPOSITORIES
     if (socket.connected) {
       socket.emit('move', { x: player.position.x, y: player.position.y, z: player.position.z, rotY: player.rotation.y });
     }
@@ -483,7 +342,6 @@ async function main(){
       }
     }
 
-    // 6. LOW-HEADROOM CAMERA OVER-THE-SHOULDER LOOK TRACKING
     lookAt.set(player.position.x, player.position.y + 1.2, player.position.z);
     
     const idealX = player.position.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
@@ -494,7 +352,6 @@ async function main(){
     const finalCamX = idealX + rightX; const finalCamZ = idealZ + rightZ;
     const finalLookAt = new THREE.Vector3(lookAt.x + rightX, lookAt.y, lookAt.z + rightZ);
 
-    // CPU BREAKTHROUGH: Only trace wall clippings every 3 frames to free up processor threads
     if (frameCount % 3 === 0 || firstFrame) {
       rayDir.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
       const maxDist = rayDir.length(); rayDir.normalize();
@@ -510,7 +367,6 @@ async function main(){
       }
     }
 
-    // 7. SMOOTH INTERPOLATION FILTERING
     if(firstFrame){ 
       camera.position.copy(camPos); firstFrame = false; 
     } else { 
@@ -520,13 +376,11 @@ async function main(){
     camera.lookAt(finalLookAt);
     ring.rotation.z = elapsed * 2;
 
-    // 8. GRAPHICS SCREEN RENDER FORWARD ENGINE STEPS
     renderer.setViewport(0, 0, innerWidth, innerHeight);
     renderer.setScissor(0, 0, innerWidth, innerHeight);
     renderer.setScissorTest(true);
     renderer.render(scene, camera);
 
-    // Minimap Rendering Core Block
     const mapSize = Math.min(innerWidth, innerHeight) * 0.25; 
     const mapX = innerWidth - mapSize - 20; const mapY = innerHeight - mapSize - 20;                  
 
