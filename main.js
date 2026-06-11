@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { buildMapLayout } from './worldGenerator.js';
 import { activeLaunchPads } from './worldGenerator.js';
 
-
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
 const socket = io();
 let myNetworkId = null;
@@ -59,7 +58,7 @@ jstEl.addEventListener('touchcancel', e => {
 // ── JUMP BUTTON ───────────────────────────────────────────────────────────────
 document.getElementById('jmp').addEventListener('touchstart', e => {
   e.preventDefault();
-  if(vy === 0) vy = 11;
+  if(vy === 0 && launchTimer <= 0) vy = 11;
 }, {passive: false});
 
 // ── RUN BUTTON ────────────────────────────────────────────────────────────────
@@ -110,7 +109,7 @@ window.addEventListener('mousemove', e => {
 const K={};
 window.addEventListener('keydown', e => {
   K[e.code] = true;
-  if(e.code === 'Space' && vy === 0){ e.preventDefault(); vy = 11; }
+  if(e.code === 'Space' && vy === 0 && launchTimer <= 0){ e.preventDefault(); vy = 11; }
   if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') toggleRun();
   if(running && (e.code==='KeyW' || e.code==='KeyA' || e.code==='KeyS' || e.code==='KeyD' ||
      e.code==='ArrowUp' || e.code==='ArrowDown' || e.code==='ArrowLeft' || e.code==='ArrowRight')) {
@@ -219,6 +218,7 @@ async function main(){
   socket.on('respawn', () => {
     pBody.setTranslation({ x: (Math.random() - 0.5) * 40, y: 15, z: (Math.random() - 0.5) * 40 }, true);
     vy = 0; 
+    launchTimer = 0;
   });
 
   // ── WEAPON FIRE TRIGGERS ────────────────────────────────────────────────────
@@ -287,11 +287,11 @@ async function main(){
 
   const crosshairEl = document.getElementById('crosshair');
 
-  // ── LAUNCHPAD TRACKING STATE ────────────────────────────────────────────────
-  let launchCooldown = 0;
-  let launchVelocity = { x: 0, y: 0, z: 0 };
+  // ── OVERHAULED CONTINUOUS FLIGHT STATE ENGINE ───────────────────────────────
+  let launchTimer = 0;
+  let activeLaunchVector = new THREE.Vector3();
 
-  // ── OPTIMIZED PERFORMANCE RUNTIME LOOP ───────────────────────────────────────
+  // ── RUNTIME LOOP ────────────────────────────────────────────────────────────
   function frame(){
     requestAnimationFrame(frame);
     const elapsed = clock.elapsedTime;
@@ -315,32 +315,34 @@ async function main(){
 
     let finalMx = mx * speed;
     let finalMz = mz * speed;
-    vy -= 28 * dt; 
 
-    // ── 2. LAUNCHPAD MOVEMENT ENGINE OVERRIDE ────────────────────────────────
-    if (launchCooldown > 0) {
-      launchCooldown -= dt;
-      controller.enableSnapToGround(0.0); // Disengage ground magnets during flight paths
-      finalMx = launchVelocity.x;         
-      finalMz = launchVelocity.z;
+    // ── COMPLETELY REDESIGNED LAUNCH OVERRIDE SYSTEM ──────────────────────────
+    if (launchTimer > 0) {
+      launchTimer -= dt;
+      controller.enableSnapToGround(false); 
+      
+      // Override physics with fixed trajectory speed completely immune to standard gravity drops
+      finalMx = activeLaunchVector.x * dt;
+      vy = activeLaunchVector.y; 
+      finalMz = activeLaunchVector.z * dt;
     } else {
-      controller.enableSnapToGround(0.3); // Re-engage snapping on normal land surfaces
-      
+      controller.enableSnapToGround(true);
+      vy -= 28 * dt; // Apply gravity normally only if not powered by pads
+
       const pos = pBody.translation();
-      
       for (const pad of activeLaunchPads) {
-        const insideX = Math.abs(pos.x - pad.x) < (pad.w / 2 + 0.5);
-        const insideZ = Math.abs(pos.z - pad.z) < (pad.d / 2 + 0.5);
-        const insideY = Math.abs(pos.y - pad.y) < 1.5;
+        const insideX = Math.abs(pos.x - pad.x) < (pad.w / 2 + 0.6);
+        const insideZ = Math.abs(pos.z - pad.z) < (pad.d / 2 + 0.6);
+        const insideY = Math.abs(pos.y - pad.y) < 1.8;
 
         if (insideX && insideZ && insideY) {
-          launchVelocity = { ...pad.force };
-          launchCooldown = 0.50; 
-          vy = pad.force.y;      
+          launchTimer = pad.duration; 
+          activeLaunchVector.set(pad.force.x, pad.force.y, pad.force.z);
           
-          controller.enableSnapToGround(0.0); 
-          finalMx = launchVelocity.x;
-          finalMz = launchVelocity.z;
+          vy = activeLaunchVector.y;
+          finalMx = activeLaunchVector.x * dt;
+          finalMz = activeLaunchVector.z * dt;
+          controller.enableSnapToGround(false);
           break;
         }
       }
@@ -351,7 +353,7 @@ async function main(){
     const corrected = controller.computedMovement();
 
     if(corrected.y >= 0 || Math.abs(corrected.y) < Math.abs(desiredMove.y) * 0.01) {
-      if(vy < 0) vy = 0;
+      if(vy < 0 && launchTimer <= 0) vy = 0;
     }
 
     const pos = pBody.translation();
@@ -365,8 +367,10 @@ async function main(){
 
     player.position.set(pos.x + corrected.x, (pos.y + corrected.y) - PH / 2, pos.z + corrected.z);
     
-    if(hasInput || (running && !hasInput)) {
+    if((hasInput || (running && !hasInput)) && launchTimer <= 0) {
       player.rotation.y = Math.atan2(mx, -mz);
+    } else if (launchTimer > 0) {
+      player.rotation.y = Math.atan2(activeLaunchVector.x, -activeLaunchVector.z);
     }
 
     if (socket.connected) {
@@ -415,7 +419,6 @@ async function main(){
 
     camera.lookAt(finalLookAt);
 
-    // ── AUTOMATIC DETECT ENEMIES IN CROSSHAIR DIRECTION ──────────────────────────
     let targetInSight = false;
     raycaster.setFromCamera(crosshairVector, camera);
     const checkDir = raycaster.ray.direction.clone().normalize();
