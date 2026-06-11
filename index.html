@@ -17,6 +17,37 @@ canvas{display:block;width:100%!important;height:100%!important;touch-action:non
   box-shadow:0 0 15px rgba(0,0,0,0.1);
   touch-action:none;
 }
+  #crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  pointer-events: none; /* Prevents interference with camera dragging touch inputs */
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#crosshair::before {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+}
+#crosshair::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.3), 0 0 4px rgba(0,0,0,0.3);
+}
+  
 #jsk{
   position:absolute;top:50%;left:50%;width:50px;height:50px;
   border-radius:50%;transform:translate(-50%,-50%);
@@ -93,7 +124,8 @@ canvas{display:block;width:100%!important;height:100%!important;touch-action:non
   <div style="border-bottom:1px solid rgba(255,255,255,0.3);padding-bottom:4px;font-weight:bold;">LEADERBOARD</div>
   <div id="scores-list"></div>
 </div>
-
+<div id="crosshair"></div>
+  
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -440,12 +472,25 @@ async function main(){
     vy = 0; 
   });
 
-  // ── SHOOTING LOGIC ───────────────────────────────────────────────────────────
+  // ── SHOOTING LOGIC (CROSSHAIR TARGETED) ───────────────────────────────────────
   function fireWeapon() {
-    const origin = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
-    const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
+    // 1. Calculate vector ray shooting straight out of camera view center
+    const cameraDirection = new THREE.Vector3();
+    camera.getWorldDirection(cameraDirection);
     
-    const maxRange = 50;
+    // 2. Flatten Y axis for character rotation math so they remain upright
+    const shootingDirection = new THREE.Vector3(cameraDirection.x, 0, cameraDirection.z).normalize();
+
+    // 3. Force your local mesh avatar to instantly face the target viewpoint
+    player.rotation.y = Math.atan2(shootingDirection.x, shootingDirection.z);
+
+    // Build ray line starting at standard chest level height
+    const origin = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+    
+    // Project weapon velocity along the absolute camera sightline ray vector
+    const direction = cameraDirection.clone().normalize(); 
+    
+    const maxRange = 65;
     const endPoint = origin.clone().add(direction.clone().multiplyScalar(maxRange));
     
     const lineGeo = new THREE.BufferGeometry().setFromPoints([origin, endPoint]);
@@ -469,7 +514,8 @@ async function main(){
       const closestPointOnRay = origin.clone().add(direction.clone().multiplyScalar(projection));
       const lateralDist = targetPos.distanceTo(closestPointOnRay);
 
-      if (lateralDist < 1.2) { 
+      // Hit registration capsule radius bounds detection
+      if (lateralDist < 1.3) { 
         const distance = origin.distanceTo(targetPos);
         if (distance < closestDist) {
           closestDist = distance;
@@ -483,14 +529,6 @@ async function main(){
     }
   }
 
-  document.getElementById('fir').addEventListener('touchstart', (e) => { 
-    e.preventDefault(); 
-    fireWeapon(); 
-  }, {passive:false});
-  
-  window.addEventListener('keydown', (e) => { 
-    if (e.code === 'KeyE' || e.code === 'Enter') fireWeapon(); 
-  });
 
   // ── CHARACTER CONTROLLER PHYSICS ─────────────────────────────────────────────
   const controller=world.createCharacterController(0.01);
