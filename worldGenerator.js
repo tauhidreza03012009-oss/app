@@ -22,53 +22,93 @@ function createRigidMesh(scene, world, R, x, y, z, w, h, d, material, rx = 0, ry
 
 // ── CLEAN HOLLOW INTERIORS ───────────────────────────────────────────────────
 
+// ── PRECISION MULTI-STORY APARTMENT BUILDINGS ───────────────────────────────
 function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
-  const wallThick = 0.6; // Thinner walls to maximize interior navigation space
+  const wallThick = 0.5; // Sharp, thin walls to prevent bulky clipping
+  const rampW = 4.0;     // Fixed comfortable width for the interior walkway
 
   for (let i = 0; i < floors; i++) {
     const yBase = i * floorH;
 
-    // 1. FLOOR PLANES & CEILING CUTOUTS
+    // 1. FLOOR PLANES WITH INTEGRATED STAIRWELL HOLES
     if (i === 0) {
-      // Ground floor is completely solid
-      createRigidMesh(scene, world, R, x, yBase + 0.2, z, w, 0.4, d, stoneMat);
+      // Ground floor baseline plate
+      createRigidMesh(scene, world, R, x, yBase + 0.1, z, w, 0.2, d, stoneMat);
     } else {
-      // Upper floors have a massive cutout on the left half so players can pass through
-      createRigidMesh(scene, world, R, x + w / 4, yBase + 0.2, z, w / 2, 0.4, d, stoneMat);
+      // Upper Floors: Cut a precise hole on the right-hand side for the ramp to emerge
+      // Main floor deck (Left side)
+      createRigidMesh(scene, world, R, x - rampW / 2, yBase + 0.1, z, w - rampW, 0.2, d, stoneMat);
+      // Safety walkways around the hole (Front and Back segments)
+      createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z + d / 3, rampW, 0.2, d / 3, stoneMat);
+      createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z - d / 3, rampW, 0.2, d / 3, stoneMat);
     }
 
-    // 2. OUTER PERIMETER SHELL (Perfect alignment, no overlaps)
+    // 2. FLUSH OUTER WALLS (No overlapping corner gaps)
     createRigidMesh(scene, world, R, x, yBase + floorH / 2, z - d / 2 + wallThick / 2, w, floorH, wallThick, stoneMat); // Back Wall
-    createRigidMesh(scene, world, R, x - w / 2 + wallThick / 2, yBase + floorH / 2, z, wallThick, floorH, d, stoneMat); // Left Wall
-    createRigidMesh(scene, world, R, x + w / 2 - wallThick / 2, yBase + floorH / 2, z, wallThick, floorH, d, stoneMat); // Right Wall
+    createRigidMesh(scene, world, R, x - w / 2 + wallThick / 2, yBase + floorH / 2, z, wallThick, floorH, d - wallThick * 2, stoneMat); // Left Wall
+    createRigidMesh(scene, world, R, x + w / 2 - wallThick / 2, yBase + floorH / 2, z, wallThick, floorH, d - wallThick * 2, stoneMat); // Right Wall
 
-    // 3. WIDE ENTRYWAY
-    if (i === 0) {
-      // Massive open door gap in the center of the front facade
-      createRigidMesh(scene, world, R, x - w / 3, yBase + floorH / 2, z + d / 2 - wallThick / 2, w / 3, floorH, wallThick, borderMat);
-      createRigidMesh(scene, world, R, x + w / 3, yBase + floorH / 2, z + d / 2 - wallThick / 2, w / 3, wallThick, floorH, borderMat);
-      createRigidMesh(scene, world, R, x, yBase + floorH - 0.8, z + d / 2 - wallThick / 2, w / 3, 1.6, wallThick, borderMat); // Header
-    } else {
-      createRigidMesh(scene, world, R, x, yBase + floorH / 2, z + d / 2 - wallThick / 2, w, floorH, wallThick, borderMat);
-    }
+    // 3. STYLIZED FRONT FAÇADE WITH WINDOW PILLARS (Matches your reference image)
+    const pillarW = 2.5;
+    // Left, Right, and Center structural columns
+    createRigidMesh(scene, world, R, x - w / 2 + pillarW / 2, yBase + floorH / 2, z + d / 2 - wallThick / 2, pillarW, floorH, wallThick, borderMat);
+    createRigidMesh(scene, world, R, x + w / 2 - pillarW / 2, yBase + floorH / 2, z + d / 2 - wallThick / 2, pillarW, floorH, wallThick, borderMat);
+    createRigidMesh(scene, world, R, x, yBase + floorH / 2, z + d / 2 - wallThick / 2, pillarW, floorH, wallThick, borderMat);
 
-    // 4. LOW-ANGLE COMFORTABLE RAMPS
+    // Top window headers closing off the frames
+    const windowW = w / 2 - pillarW;
+    createRigidMesh(scene, world, R, x - w / 4, yBase + floorH - 0.6, z + d / 2 - wallThick / 2, windowW, 1.2, wallThick, borderMat);
+    createRigidMesh(scene, world, R, x + w / 4, yBase + floorH - 0.6, z + d / 2 - wallThick / 2, windowW, 1.2, wallThick, borderMat);
+
+    if (i > 0) {
+      // Upper floors get safety window sills (creates a perfect square window cutout)
+      createRigidMesh(scene, world, R, x - w / 4, yBase + 0.6, z + d / 2 - wallThick / 2, windowW, 1.2, wallThick, borderMat);
+      createRigidMesh(scene, world, R, x + w / 4, yBase + 0.6, z + d / 2 - wallThick / 2, windowW, 1.2, wallThick, borderMat);
+    } // Note: Ground floor skips the lower sills so they act as two wide door entryways!
+
+    // 4. FLUSH SIDE-WALL RAMPS (Tucked cleanly against the right interior wall)
     if (i < floors - 1) {
-      const rampLength = Math.sqrt(d * d + floorH * floorH) - 1.0;
-      const rampAngle = -Math.atan2(floorH, d - 2.0);
+      const rampRun = d - 2.0; // Stop short of hitting the front/back walls
+      const rampLength = Math.sqrt(rampRun * rampRun + floorH * floorH);
+      const rampAngle = Math.atan2(floorH, rampRun); // Tilted cleanly up towards the back stairwell hole
 
-      // Runs cleanly along the left interior wall up into the ceiling cutout
       createRigidMesh(
         scene, world, R,
-        x - w / 4, yBase + floorH / 2 + 0.2, z,
-        4.0, 0.3, rampLength, woodMat,
-        rampAngle, 0, 0
+        x + w / 2 - wallThick - rampW / 2, // Hugs the right interior wall perfectly
+        yBase + floorH / 2,                // Centers perfectly between floors
+        z,                                 // Center aligned on Z axis
+        rampW, 0.15, rampLength, woodMat,
+        rampAngle, 0, 0                    // Rotates cleanly up on the X axis
       );
     }
   }
 
-  // Roof cap overlay
-  createRigidMesh(scene, world, R, x, floors * floorH + 0.2, z, w + 0.8, 0.4, d + 0.8, roofMat);
+  // Roof decorative crown cap
+  createRigidMesh(scene, world, R, x, floors * floorH + 0.1, z, w + 0.8, 0.2, d + 0.8, roofMat);
+}
+
+// ── PRECISION COMMERCIAL RETAIL STORES ───────────────────────────────────────
+function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
+  const wallThick = 0.5;
+  
+  // Floor plate & Roof slab overhang trims
+  createRigidMesh(scene, world, R, x, 0.1, z, w, 0.2, d, stoneMat);
+  createRigidMesh(scene, world, R, x, h + 0.1, z, w + 0.6, 0.2, d + 0.6, roofMat);
+
+  // Shell
+  createRigidMesh(scene, world, R, x, h / 2, z - d / 2 + wallThick / 2, w, h, wallThick, stoneMat); // Back
+  createRigidMesh(scene, world, R, x - w / 2 + wallThick / 2, h / 2, z, wallThick, h, d - wallThick * 2, stoneMat); // Left
+  createRigidMesh(scene, world, R, x + w / 2 - wallThick / 2, h / 2, z, wallThick, h, d - wallThick * 2, stoneMat); // Right
+
+  // Clean Front Open Showroom Windows
+  const pillarW = 2.0;
+  createRigidMesh(scene, world, R, x - w / 2 + pillarW / 2, h / 2, z + d / 2 - wallThick / 2, pillarW, h, wallThick, borderMat);
+  createRigidMesh(scene, world, R, x + w / 2 + pillarW / 2, h / 2, z + d / 2 - wallThick / 2, pillarW, h, wallThick, borderMat);
+  createRigidMesh(scene, world, R, x, h - 0.6, z + d / 2 - wallThick / 2, w - pillarW * 2, 1.2, wallThick, borderMat); // Top Header
+
+  // Signage structure
+  createRigidMesh(scene, world, R, x, h * 0.75, z + d / 2 + 0.3, w + 0.2, 0.2, 0.8, roofMat);
+  createRigidMesh(scene, world, R, x, h * 0.9, z + d / 2 + 0.05, w * 0.85, 0.8, 0.1, signMat);
 }
 
 function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
