@@ -302,7 +302,7 @@ async function main(){
     if(running && !hasInput) iy = -1;
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
-    const mx = -ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
+    const mx = ix * Math.cos(camYaw)-iy * Math.sin(camYaw);
     const mz = ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
     vy -= 28 * dt; 
