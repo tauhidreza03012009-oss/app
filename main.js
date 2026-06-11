@@ -461,7 +461,7 @@ async function main(){
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
     // FIX applied here: added negative sign (-ix) to correct joystick side inversion
-    const mx = -ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
+    const mx = ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
     const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
 
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
