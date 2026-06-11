@@ -287,7 +287,7 @@ async function main(){
 
   const crosshairEl = document.getElementById('crosshair');
 
-  // ── LAUNCHPAD COOLDOWN STATE (Tracked cleanly outside runtime loop) ──────────
+  // ── LAUNCHPAD TRACKING STATE ────────────────────────────────────────────────
   let launchCooldown = 0;
   let launchVelocity = { x: 0, y: 0, z: 0 };
 
@@ -299,7 +299,6 @@ async function main(){
     world.timestep = 1 / 60; 
     frameCount++;
       
-    // 1. Gather Joystick & Keyboard inputs
     let ix = jx, iy = jy;
     if(K['KeyA'] || K['ArrowLeft'])  ix = -1;
     if(K['KeyD'] || K['ArrowRight']) ix =  1;
@@ -310,43 +309,43 @@ async function main(){
     if(running && !hasInput) iy = -1;
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
-    // Calculate base input heading vectors
     const mx = ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
     const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
 
     let finalMx = mx * speed;
     let finalMz = mz * speed;
-    vy -= 28 * dt; // Apply gravity downward frame-by-frame
+    vy -= 28 * dt; 
 
     // ── 2. LAUNCHPAD MOVEMENT ENGINE OVERRIDE ────────────────────────────────
     if (launchCooldown > 0) {
       launchCooldown -= dt;
-      // Convert continuous speed vectors smoothly relative to frame time delta
-      finalMx = launchVelocity.x * dt;
-      finalMz = launchVelocity.z * dt;
+      controller.enableSnapToGround(0.0); // Disengage ground magnets during flight paths
+      finalMx = launchVelocity.x;         
+      finalMz = launchVelocity.z;
     } else {
-      // Not locked in launch flight? Run distance checks on active map jumpers
-      const pPos = pBody.translation();
+      controller.enableSnapToGround(0.3); // Re-engage snapping on normal land surfaces
+      
+      const pos = pBody.translation();
       
       for (const pad of activeLaunchPads) {
-        const insideX = Math.abs(pPos.x - pad.x) < (pad.w / 2 + 0.5);
-        const insideZ = Math.abs(pPos.z - pad.z) < (pad.d / 2 + 0.5);
-        const insideY = Math.abs(pPos.y - pad.y) < 1.5;
+        const insideX = Math.abs(pos.x - pad.x) < (pad.w / 2 + 0.5);
+        const insideZ = Math.abs(pos.z - pad.z) < (pad.d / 2 + 0.5);
+        const insideY = Math.abs(pos.y - pad.y) < 1.5;
 
         if (insideX && insideZ && insideY) {
           launchVelocity = { ...pad.force };
-          launchCooldown = 0.50; // Block player input fighting for 0.5s during flight path
-          vy = pad.force.y;      // Deliver direct upward momentum velocity burst
+          launchCooldown = 0.50; 
+          vy = pad.force.y;      
           
-          finalMx = launchVelocity.x * dt;
-          finalMz = launchVelocity.z * dt;
+          controller.enableSnapToGround(0.0); 
+          finalMx = launchVelocity.x;
+          finalMz = launchVelocity.z;
           break;
         }
       }
     }
 
-    // 3. Commit calculated movement forces to Rapier controller
     const desiredMove = {x: finalMx, y: vy * dt, z: finalMz};
     controller.computeColliderMovement(pCollider, desiredMove);
     const corrected = controller.computedMovement();
