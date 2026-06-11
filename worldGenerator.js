@@ -68,7 +68,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
     } else {
       createRigidMesh(scene, world, R, x - rampW / 2, yBase + 0.1, z, w - rampW, 0.2, d, redFloorMat);
       createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z + d / 3, rampW, 0.2, d / 3, redFloorMat);
-      createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z - d / 3, rampW, 0.2, d / 3, redFloorMat);
+      createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z , rampW, 0.2, d / 3, redFloorMat);
     }
 
     createRigidMesh(scene, world, R, x, yBase + floorH / 2, z - d / 2 + wallThick / 2, w, floorH, wallThick, stoneMat); 
