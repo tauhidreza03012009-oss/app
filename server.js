@@ -18,15 +18,32 @@ const activePlayers = {};
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
+  
+  // Set default spawn data along with starting score profile
+  activePlayers[socket.id] = { x: 0, y: 100, z: 30, rotY: 0, score: 0 };
   socket.emit('init', socket.id);
 
   socket.on('move', (data) => {
-    activePlayers[socket.id] = {
-      x: data.x,
-      y: data.y,
-      z: data.z,
-      rotY: data.rotY
-    };
+    if (activePlayers[socket.id]) {
+      activePlayers[socket.id].x = data.x;
+      activePlayers[socket.id].y = data.y;
+      activePlayers[socket.id].z = data.z;
+      activePlayers[socket.id].rotY = data.rotY;
+    }
+  });
+
+  // ── SHOOTING HIT REGISTRATION ──────────────────────────────────────────────
+  socket.on('shoot', (targetId) => {
+    if (activePlayers[targetId] && activePlayers[socket.id]) {
+      // Award shooter a point
+      activePlayers[socket.id].score += 1;
+      
+      // Tell the target client they were eliminated to trigger local respawn
+      io.to(targetId).emit('respawn');
+      
+      // Instantly broadcast the scoring payload to eliminate latency lag
+      io.emit('tick', activePlayers);
+    }
   });
 
   socket.on('disconnect', () => {
