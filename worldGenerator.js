@@ -111,26 +111,7 @@ function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
   createRigidMesh(scene, world, R, x, h * 0.9, z + d / 2 + 0.05, w * 0.85, 0.8, 0.1, signMat);
 }
 
-function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
-  const wallThick = 0.6;
-  // Floor & Flat Roof Slabs
-  createRigidMesh(scene, world, R, x, 0.2, z, w, 0.4, d, stoneMat);
-  createRigidMesh(scene, world, R, x, h + 0.1, z, w + 0.6, 0.2, d + 0.6, roofMat);
 
-  // Deep Structural Enclosures
-  createRigidMesh(scene, world, R, x, h / 2, z - d / 2 + wallThick / 2, w, h, wallThick, stoneMat); // Back
-  createRigidMesh(scene, world, R, x - w / 2 + wallThick / 2, h / 2, z, wallThick, h, d, stoneMat); // Left
-  createRigidMesh(scene, world, R, x + w / 2 - wallThick / 2, h / 2, z, wallThick, h, d, stoneMat); // Right
-
-  // Clean Front Open Facade
-  createRigidMesh(scene, world, R, x - w / 3, h / 2, z + d / 2 - wallThick / 2, w / 4, h, wallThick, borderMat);
-  createRigidMesh(scene, world, R, x + w / 3, h / 2, z + d / 2 - wallThick / 2, w / 4, h, wallThick, borderMat);
-  createRigidMesh(scene, world, R, x, h - 0.8, z + d / 2 - wallThick / 2, w / 3, 1.6, wallThick, borderMat);
-
-  // Exterior Billboard Panels
-  createRigidMesh(scene, world, R, x, h * 0.65, z + d / 2 + 0.4, w + 0.2, 0.2, 1.0, roofMat);
-  createRigidMesh(scene, world, R, x, h * 0.85, z + d / 2 + 0.1, w * 0.8, 1.0, 0.2, signMat);
-}
 
 function buildPropTree(scene, world, R, x, z) {
   createRigidMesh(scene, world, R, x, 2.5, z, 0.6, 5.0, 0.6, woodMat, 0, 0, 0, true);
