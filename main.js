@@ -8,9 +8,11 @@ let myNetworkId = null;
 const remotePlayers = {}; 
 const targetStates = {}; 
 
-// ── SHARED STATE ──────────────────────────────────────────────────────────────
+// ── SHARED STATE (LAUNCH SYNC GLOBALIZED) ─────────────────────────────────────
 let vy = 0;
 let running = false;
+let launchTimer = 0;
+const activeLaunchVector = new THREE.Vector3();
 
 // ── JOYSTICK ──────────────────────────────────────────────────────────────────
 const jstEl = document.getElementById('jst');
@@ -287,10 +289,6 @@ async function main(){
 
   const crosshairEl = document.getElementById('crosshair');
 
-  // ── OVERHAULED CONTINUOUS FLIGHT STATE ENGINE ───────────────────────────────
-  let launchTimer = 0;
-  let activeLaunchVector = new THREE.Vector3();
-
   // ── RUNTIME LOOP ────────────────────────────────────────────────────────────
   function frame(){
     requestAnimationFrame(frame);
@@ -316,18 +314,17 @@ async function main(){
     let finalMx = mx * speed;
     let finalMz = mz * speed;
 
-    // ── COMPLETELY REDESIGNED LAUNCH OVERRIDE SYSTEM ──────────────────────────
+    // ── TRAJECTORY FLIGHT PROCESSING ──────────────────────────────────────────
     if (launchTimer > 0) {
       launchTimer -= dt;
       controller.enableSnapToGround(false); 
       
-      // Override physics with fixed trajectory speed completely immune to standard gravity drops
       finalMx = activeLaunchVector.x * dt;
       vy = activeLaunchVector.y; 
       finalMz = activeLaunchVector.z * dt;
     } else {
       controller.enableSnapToGround(true);
-      vy -= 28 * dt; // Apply gravity normally only if not powered by pads
+      vy -= 28 * dt; 
 
       const pos = pBody.translation();
       for (const pad of activeLaunchPads) {
