@@ -11,10 +11,10 @@ let vy = 0;
 let running = false;
 
 // ── JOYSTICK ──────────────────────────────────────────────────────────────────
-let jx = 0, jy = 0, jId = -1;
 const jstEl = document.getElementById('jst');
 const jskEl = document.getElementById('jsk');
 const JR = 50;
+let jx = 0, jy = 0, jId = -1;
 
 function moveJoy(t){
   const r = jstEl.getBoundingClientRect();
@@ -67,7 +67,7 @@ function toggleRun(force){
 }
 runEl.addEventListener('touchstart', e => { e.preventDefault(); toggleRun(); }, {passive: false});
 
-// ── CAMERA DRAG (FIXED NATURAL SWIPE DIRECTIONS) ──────────────────────────────
+// ── CAMERA DRAG (NATURAL SWIPE DIRECTION) ─────────────────────────────────────
 let camYaw = 0, camPitch = 0.4, cId = -1, cLx = 0, cLy = 0;
 window.addEventListener('touchstart', e => {
   for(const t of e.changedTouches){
@@ -103,7 +103,7 @@ window.addEventListener('mousemove', e => {
   mLx = e.clientX; mLy = e.clientY;
 });
 
-// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+// ── KEYBOARD CONTROLS ─────────────────────────────────────────────────────────
 const K={};
 window.addEventListener('keydown', e => {
   K[e.code] = true;
@@ -147,10 +147,10 @@ async function main(){
   sun.shadow.mapSize.set(2048, 2048);
   scene.add(sun);
 
-  // ── PHYSICS WORLD ────────────────────────────────────────────────────────────
+  // ── PHYSICS SETUP ────────────────────────────────────────────────────────────
   const world = new R.World({x: 0, y: -32, z: 0});
 
-  // ── VILLAGE ENVIRONMENT SETUP ────────────────────────────────────────────────
+  // ── VILLAGE ASSET BUILDER ────────────────────────────────────────────────────
   const grassMat  = new THREE.MeshStandardMaterial({color: 0x4c7c4c, roughness: 0.9});
   const pathMat   = new THREE.MeshStandardMaterial({color: 0xdfc49f, roughness: 0.8});
   const woodMat   = new THREE.MeshStandardMaterial({color: 0x6f4e37, roughness: 0.7});
@@ -161,8 +161,7 @@ async function main(){
   const borderMat = new THREE.MeshStandardMaterial({color: 0x2b3e2b, roughness: 0.9});
 
   const MAP_SIZE = 360;
-  const floorGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
-  const floorMesh = new THREE.Mesh(floorGeo, grassMat); 
+  const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE), grassMat); 
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.receiveShadow = true;
   scene.add(floorMesh);
@@ -229,35 +228,22 @@ async function main(){
 
   addTownWell(0, 0);
 
-  // Houses & Crates
+  // Spawning Structures
   addHouse(-35, 35, 16, 10, 16);
-  addCrate(-23, 30, 3);
-  addCrate(-23, 33, 5); 
-
-  addHouse(35, 40, 14, 9, 14);
-  addCrate(25, 40, 3);
-
-  addHouse(-40, -35, 14, 9, 18);
-  addCrate(-40, -23, 4);
-
-  addHouse(45, -45, 20, 14, 20);
-  addCrate(32, -45, 4);
-  addCrate(32, -40, 8);
-
-  addHouse(-90, 35, 16, 10, 14);
-  addHouse(90, -35, 14, 9, 16);
-  addHouse(-100, -80, 18, 11, 14);
-  addHouse(100, 80, 16, 10, 16);
+  addCrate(-23, 30, 3); addCrate(-23, 33, 5); 
+  addHouse(35, 40, 14, 9, 14); addCrate(25, 40, 3);
+  addHouse(-40, -35, 14, 9, 18); addCrate(-40, -23, 4);
+  addHouse(45, -45, 20, 14, 20); addCrate(32, -45, 4); addCrate(32, -40, 8);
+  addHouse(-90, 35, 16, 10, 14); addHouse(90, -35, 14, 9, 16);
+  addHouse(-100, -80, 18, 11, 14); addHouse(100, 80, 16, 10, 16);
 
   const treeLocations = [
-    [-15, 25], [15, 25], [-20, -25], [25, -20],
-    [-70, 40], [70, -40], [40, 80], [-40, -80],
-    [120, 120], [-120, 120], [120, -120], [-120, -120],
-    [-140, 20], [140, -20], [-20, 140], [20, -140]
+    [-15, 25], [15, 25], [-20, -25], [25, -20], [-70, 40], [70, -40], [40, 80], [-40, -80],
+    [120, 120], [-120, 120], [120, -120], [-120, -120], [-140, 20], [140, -20], [-20, 140], [20, -140]
   ];
   treeLocations.forEach(loc => addTree(loc[0], loc[1], 4 + Math.random() * 3));
 
-  // ── PLAYER SETUP ────────────────────────────────────────────────────────────
+  // ── PLAYER OBJECT GRAPHICS ───────────────────────────────────────────────────
   const PH = 1.8, PR = 0.35;
   const player = new THREE.Group();
   scene.add(player);
@@ -266,105 +252,64 @@ async function main(){
     new THREE.CapsuleGeometry(PR, PH - PR * 2, 8, 16),
     new THREE.MeshStandardMaterial({color: 0xff3366, roughness: 0.2}) 
   );
-  bMesh.position.y = PH / 2;
-  bMesh.castShadow = true;
-  player.add(bMesh);
+  bMesh.position.y = PH / 2; bMesh.castShadow = true; player.add(bMesh);
   
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.45, 0.04, 8, 32),
-    new THREE.MeshStandardMaterial({color: 0xff3366})
-  );
-  ring.rotation.x = Math.PI / 2;
-  ring.position.y = 0.05;
-  player.add(ring);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 8, 32), new THREE.MeshStandardMaterial({color: 0xff3366}));
+  ring.rotation.x = Math.PI / 2; ring.position.y = 0.05; player.add(ring);
 
-  const visor = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.15, 0.3),
-    new THREE.MeshStandardMaterial({color: 0x111111})
-  );
-  visor.position.set(0, 1.4, -0.25);
-  player.add(visor);
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.15, 0.3), new THREE.MeshStandardMaterial({color: 0x111111}));
+  visor.position.set(0, 1.4, -0.25); player.add(visor);
 
   function createRemotePlayerMesh() {
     const group = new THREE.Group();
-    const body = new THREE.Mesh(
-      new THREE.CapsuleGeometry(PR, PH - PR * 2, 8, 16),
-      new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.2 })
-    );
-    body.position.y = PH / 2;
-    body.castShadow = true;
-    group.add(body);
-
-    const v = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.15, 0.3),
-      new THREE.MeshStandardMaterial({ color: 0x111111 })
-    );
-    v.position.set(0, 1.4, -0.25);
-    group.add(v);
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(PR, PH - PR * 2, 8, 16), new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.2 }));
+    body.position.y = PH / 2; body.castShadow = true; group.add(body);
+    const v = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.15, 0.3), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+    v.position.set(0, 1.4, -0.25); group.add(v);
     scene.add(group);
     return group;
   }
 
-  // ── NETWORKING LISTENERS ─────────────────────────────────────────────────────
-  socket.on('init', (id) => {
-    myNetworkId = id;
-    console.log("Connected. Unique ID:", myNetworkId);
-  });
+  // ── SERVER NETWORK SYNC ──────────────────────────────────────────────────────
+  socket.on('init', id => { myNetworkId = id; });
 
-  socket.on('tick', (serverPlayers) => {
+  socket.on('tick', serverPlayers => {
     const listEl = document.getElementById('scores-list');
     if (listEl) {
       let listHTML = '';
       for (const id in serverPlayers) {
         const tag = (id === myNetworkId) ? "You" : `Player_${id.substring(0, 4)}`;
-        const pts = serverPlayers[id].score || 0;
-        listHTML += `<div>${tag}: <b>${pts}</b></div>`;
+        listHTML += `<div>${tag}: <b>${serverPlayers[id].score || 0}</b></div>`;
       }
       listEl.innerHTML = listHTML;
     }
 
     for (const id in serverPlayers) {
       if (id === myNetworkId) continue;
-
       const pData = serverPlayers[id];
       if (!remotePlayers[id]) {
         remotePlayers[id] = createRemotePlayerMesh();
-        targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
       }
-      
       targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
     }
   });
 
-  socket.on('removePlayer', (id) => {
+  socket.on('removePlayer', id => {
     if (remotePlayers[id]) {
       scene.remove(remotePlayers[id]);
-      delete remotePlayers[id];
-      delete targetStates[id];
+      delete remotePlayers[id]; delete targetStates[id];
     }
   });
 
   socket.on('respawn', () => {
-    const rx = (Math.random() - 0.5) * 60;
-    const rz = (Math.random() - 0.5) * 60;
-    pBody.setTranslation({ x: rx, y: 15, z: rz }, true);
+    pBody.setTranslation({ x: (Math.random() - 0.5) * 60, y: 15, z: (Math.random() - 0.5) * 60 }, true);
     vy = 0; 
   });
 
-  // ── FIRE BUTTON TRIGGERS ─────────────────────────────────────────────────────
-  const fireBtn = document.getElementById('fir');
-  fireBtn.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    fireWeapon();
-  }, { passive: false });
-
-  window.addEventListener('mousedown', (e) => {
-    if (e.target.tagName === 'CANVAS') {
-      fireWeapon();
-    }
-  });
+  // ── WEAPON FIRE TRIGGERS ────────────────────────────────────────────────────
+  document.getElementById('fir').addEventListener('touchstart', e => { e.preventDefault(); fireWeapon(); }, { passive: false });
+  window.addEventListener('mousedown', e => { if (e.target.tagName === 'CANVAS') fireWeapon(); });
   
-  // ── SHOOTING LOGIC ───────────────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
   const crosshairVector = new THREE.Vector2(0, 0.2); 
 
@@ -373,51 +318,35 @@ async function main(){
     const rayDir = raycaster.ray.direction.clone().normalize();
     const rayOrigin = raycaster.ray.origin.clone();
     
-    const shootingDirection = new THREE.Vector3(rayDir.x, 0, rayDir.z).normalize();
-    player.rotation.y = Math.atan2(shootingDirection.x, shootingDirection.z);
+    player.rotation.y = Math.atan2(rayDir.x, rayDir.z);
 
     const maxRange = 120;
     const targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
     const tracerStart = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
     
     const lineGeo = new THREE.BufferGeometry().setFromPoints([tracerStart, targetPointInSpace]);
-    const lineMat = new THREE.LineBasicMaterial({color: 0xff355e, linewidth: 7});
-    const tracer = new THREE.Line(lineGeo, lineMat);
-    
-    tracer.frustumCulled = false; 
-    scene.add(tracer);
+    const tracer = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({color: 0xff355e, linewidth: 7}));
+    tracer.frustumCulled = false; scene.add(tracer);
     setTimeout(() => scene.remove(tracer), 60);
 
-    let closestTarget = null;
-    let closestDist = maxRange;
+    let closestTarget = null; let closestDist = maxRange;
 
     for (const id in remotePlayers) {
-      const remoteP = remotePlayers[id];
-      const targetPos = remoteP.position.clone().add(new THREE.Vector3(0, 1.0, 0));
-      
+      const targetPos = remotePlayers[id].position.clone().add(new THREE.Vector3(0, 1.0, 0));
       const toTarget = targetPos.clone().sub(rayOrigin);
       const projection = toTarget.dot(rayDir);
-      
       if (projection < 0) continue; 
 
       const closestPointOnRay = rayOrigin.clone().add(rayDir.clone().multiplyScalar(projection));
-      const lateralDist = targetPos.distanceTo(closestPointOnRay);
-
-      if (lateralDist < 1.8) { 
+      if (targetPos.distanceTo(closestPointOnRay) < 1.8) { 
         const distance = rayOrigin.distanceTo(targetPos);
-        if (distance < closestDist) {
-          closestDist = distance;
-          closestTarget = id;
-        }
+        if (distance < closestDist) { closestDist = distance; closestTarget = id; }
       }
     }
-
-    if (closestTarget) {
-      socket.emit('shoot', closestTarget);
-    }
+    if (closestTarget) socket.emit('shoot', closestTarget);
   }
 
-  // ── CHARACTER CONTROLLER PHYSICS ─────────────────────────────────────────────
+  // ── KINEMATIC CHARACTER CONTROLLER CONFIG ────────────────────────────────────
   const controller = world.createCharacterController(0.01);
   controller.setSlideEnabled(true);
   controller.setMaxSlopeClimbAngle(45 * Math.PI / 180);
@@ -430,8 +359,7 @@ async function main(){
 
   window.addEventListener('resize', () => {
     renderer.setSize(innerWidth, innerHeight);
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   });
 
   const MOVE_SPEED = 0.32; 
@@ -440,16 +368,20 @@ async function main(){
   const lookAt = new THREE.Vector3();
   const rayDir = new THREE.Vector3(); 
   let firstFrame = true;
+  let frameCount = 0;
 
-  // ── MAIN RUNTIME LOOP ────────────────────────────────────────────────────────
+  // ── OPTIMIZED PERFORMANCE RUNTIME LOOP ───────────────────────────────────────
   function frame(){
     requestAnimationFrame(frame);
     const elapsed = clock.elapsedTime;
+    
+    // Stabilize dynamic steps so low-end mobile devices don't stutter
     const dt = Math.min(clock.getDelta(), 0.05); 
+    world.timestep = 1 / 60; 
 
-    world.timestep = dt;
+    frameCount++;
 
-    // 1. GATHER INPUTS
+    // 1. INPUT MATH
     let ix = jx, iy = jy;
     if(K['KeyA'] || K['ArrowLeft'])  ix = -1;
     if(K['KeyD'] || K['ArrowRight']) ix =  1;
@@ -457,19 +389,16 @@ async function main(){
     if(K['KeyS'] || K['ArrowDown'])  iy =  1;
 
     const hasInput = Math.abs(ix) > 0.02 || Math.abs(iy) > 0.02;
-
-    if(running && !hasInput){ iy = -1; }
+    if(running && !hasInput) iy = -1;
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
-    // 2. MOVE PLAYER LOGIC (FIX: Fixed Horizontal Axis processing sign inversion)
+    // 2. INTERPOLATE DIRECTION ARRAYS
     const mx = -ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
     const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
-
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
     vy -= 28 * dt; 
 
     const desiredMove = {x: mx * speed, y: vy * dt, z: mz * speed};
-
     controller.computeColliderMovement(pCollider, desiredMove);
     const corrected = controller.computedMovement();
 
@@ -484,25 +413,18 @@ async function main(){
       z: pos.z + corrected.z
     });
 
-    // 3. STEP THE PHYSICS WORLD (CRITICAL: Moved up to run completely before visual sync layout)
+    // 3. RESOLVE PHYSICS SIMULATION ENGINE STEP
     world.step();
 
-    // 4. SYNC THREE.JS PLAYER VISUALS TO PHYSICS BODY
-    const p = pBody.translation();
-    player.position.set(p.x, p.y - PH / 2, p.z);
-    
+    // 4. MAP THREEJS TRANSLATIONS FROM THE SETTLED PHYSICAL OBJECT POSITION
+    player.position.set(pos.x + corrected.x, (pos.y + corrected.y) - PH / 2, pos.z + corrected.z);
     if(hasInput || (running && !hasInput)) {
       player.rotation.y = Math.atan2(mx, mz);
     }
 
-    // 5. UPDATE MULTIPLAYER SOCKETS
+    // 5. EMIT POSITION PACKETS TO SOCKET REPOSITORIES
     if (socket.connected) {
-      socket.emit('move', {
-        x: player.position.x,
-        y: player.position.y,
-        z: player.position.z,
-        rotY: player.rotation.y
-      });
+      socket.emit('move', { x: player.position.x, y: player.position.y, z: player.position.z, rotY: player.rotation.y });
     }
 
     for (const id in remotePlayers) {
@@ -514,55 +436,52 @@ async function main(){
       }
     }
 
-    // 6. RUN OVER-THE-SHOULDER CAMERA MATH (FIX: Now correctly processes after physics calculations)
-    lookAt.set(p.x, p.y - PH / 2 + 1.2, p.z);
+    // 6. LOW-HEADROOM CAMERA OVER-THE-SHOULDER LOOK TRACKING
+    lookAt.set(player.position.x, player.position.y + 1.2, player.position.z);
     
-    const idealX = p.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
-    const idealY = p.y - PH / 2 + 1.2 + Math.sin(camPitch) * 7.5;
-    const idealZ = p.z + Math.cos(camYaw) * Math.cos(camPitch) * 7.5;
+    const idealX = player.position.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
+    const idealY = player.position.y + 1.2 + Math.sin(camPitch) * 7.5;
+    const idealZ = player.position.z + Math.cos(camYaw) * Math.cos(camPitch) * 7.5;
     
-    const rightX = Math.cos(camYaw) * 1.4; 
-    const rightZ = -Math.sin(camYaw) * 1.4;
-
-    const finalCamX = idealX + rightX;
-    const finalCamZ = idealZ + rightZ;
+    const rightX = Math.cos(camYaw) * 1.4; const rightZ = -Math.sin(camYaw) * 1.4;
+    const finalCamX = idealX + rightX; const finalCamZ = idealZ + rightZ;
     const finalLookAt = new THREE.Vector3(lookAt.x + rightX, lookAt.y, lookAt.z + rightZ);
-    
-    rayDir.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
-    const maxDist = rayDir.length();
-    rayDir.normalize();
-    
-    const ray = new R.Ray(finalLookAt, rayDir);
-    const hit = world.castRay(ray, maxDist, true, null, null, pCollider);
 
-    if (hit) {
-      const safeDist = Math.max(0.4, hit.toi - 0.15);
-      camPos.set(finalLookAt.x + rayDir.x * safeDist, finalLookAt.y + rayDir.y * safeDist, finalLookAt.z + rayDir.z * safeDist);
-    } else {
-      camPos.set(finalCamX, idealY, finalCamZ);
+    // 🚀 CPU BREAKTHROUGH: Only trace wall clippings every 3 frames to free up processor threads
+    if (frameCount % 3 === 0 || firstFrame) {
+      rayDir.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
+      const maxDist = rayDir.length(); rayDir.normalize();
+      
+      const ray = new R.Ray(finalLookAt, rayDir);
+      const hit = world.castRay(ray, maxDist, true, null, null, pCollider);
+
+      if (hit) {
+        const safeDist = Math.max(0.4, hit.toi - 0.15);
+        camPos.set(finalLookAt.x + rayDir.x * safeDist, finalLookAt.y + rayDir.y * safeDist, finalLookAt.z + rayDir.z * safeDist);
+      } else {
+        camPos.set(finalCamX, idealY, finalCamZ);
+      }
     }
 
-    // 7. SMOOTH CAMERA INTERPOLATION (FIX: Cranked up speed factor from -18 to -30 to stop the jitter)
+    // 7. SMOOTH INTERPOLATION FILTERING
     if(firstFrame){ 
-      camera.position.copy(camPos); 
-      firstFrame = false; 
+      camera.position.copy(camPos); firstFrame = false; 
     } else { 
-      camera.position.lerp(camPos, 1 - Math.exp(-30 * dt)); 
+      camera.position.lerp(camPos, 0.14); 
     }
 
     camera.lookAt(finalLookAt);
     ring.rotation.z = elapsed * 2;
 
-    // ── RENDER SYSTEM ────────────────────────────────────────────────────────
+    // 8. GRAPHICS SCREEN RENDER FORWARD ENGINE STEPS
     renderer.setViewport(0, 0, innerWidth, innerHeight);
     renderer.setScissor(0, 0, innerWidth, innerHeight);
     renderer.setScissorTest(true);
     renderer.render(scene, camera);
 
-    // Minimap Render Loop Execution
+    // Minimap Rendering Core Block
     const mapSize = Math.min(innerWidth, innerHeight) * 0.25; 
-    const mapX = innerWidth - mapSize - 20;                   
-    const mapY = innerHeight - mapSize - 20;                  
+    const mapX = innerWidth - mapSize - 20; const mapY = innerHeight - mapSize - 20;                  
 
     minimapCamera.position.set(player.position.x, 200, player.position.z);
     minimapCamera.lookAt(player.position.x, player.position.y, player.position.z);
@@ -571,9 +490,7 @@ async function main(){
     renderer.setScissor(mapX, mapY, mapSize, mapSize);
     renderer.setScissorTest(true);
     
-    renderer.setClearColor(0xeef2f7); 
-    renderer.clearDepth(); 
-    renderer.render(scene, minimapCamera);
+    renderer.setClearColor(0xeef2f7); renderer.clearDepth(); renderer.render(scene, minimapCamera);
     renderer.setClearColor(0xffffff); 
   }
   frame();
