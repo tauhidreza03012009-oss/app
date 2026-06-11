@@ -285,8 +285,11 @@ async function main(){
   let firstFrame = true;
   let frameCount = 0;
 
-  // Cache element outside the frame loop for rendering efficiency
   const crosshairEl = document.getElementById('crosshair');
+
+  // ── LAUNCHPAD COOLDOWN STATE (Tracked cleanly outside runtime loop) ──────────
+  let launchCooldown = 0;
+  let launchVelocity = { x: 0, y: 0, z: 0 };
 
   // ── OPTIMIZED PERFORMANCE RUNTIME LOOP ───────────────────────────────────────
   function frame(){
@@ -295,40 +298,8 @@ async function main(){
     const dt = Math.min(clock.getDelta(), 0.05); 
     world.timestep = 1 / 60; 
     frameCount++;
-// Create a global variable outside your loop to track launch status
-let launchCooldown = 0;
-let launchVelocity = { x: 0, y: 0, z: 0 };
-
-// INSIDE YOUR TICK / ANIMATION LOOP:
-if (launchCooldown > 0) {
-  launchCooldown -= deltaTime;
-  
-  // Apply the active launch forces directly to the player movement override
-  verticalVelocity = launchVelocity.y;
-  movementVector.x = launchVelocity.x;
-  movementVector.z = launchVelocity.z;
-} else {
-  // ── CHECK IF PLAYER STEPPED ON A JUMPER ──
-  const pPos = playerBody.translation();
-  
-  for (const pad of activeLaunchPads) {
-    // Check if player X/Z coordinates match the pad dimensions
-    const insideX = Math.abs(pPos.x - pad.x) < (pad.w / 2 + 0.5);
-    const insideZ = Math.abs(pPos.z - pad.z) < (pad.d / 2 + 0.5);
-    const insideY = Math.abs(pPos.y - pad.y) < 1.5; // Close to ground level
-
-    if (insideX && insideZ && insideY) {
-      // Trigger Launch!
-      launchVelocity = { ...pad.force };
-      launchCooldown = 0.45; // Lock manual inputs for 0.45 seconds during flight
       
-      // Seed vertical velocity immediately to crack character ground lock
-      verticalVelocity = pad.force.y;
-      break;
-    }
-  }
-    }
-      
+    // 1. Gather Joystick & Keyboard inputs
     let ix = jx, iy = jy;
     if(K['KeyA'] || K['ArrowLeft'])  ix = -1;
     if(K['KeyD'] || K['ArrowRight']) ix =  1;
@@ -339,12 +310,44 @@ if (launchCooldown > 0) {
     if(running && !hasInput) iy = -1;
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
+    // Calculate base input heading vectors
     const mx = ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
     const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
-    vy -= 28 * dt; 
 
-    const desiredMove = {x: mx * speed, y: vy * dt, z: mz * speed};
+    let finalMx = mx * speed;
+    let finalMz = mz * speed;
+    vy -= 28 * dt; // Apply gravity downward frame-by-frame
+
+    // ── 2. LAUNCHPAD MOVEMENT ENGINE OVERRIDE ────────────────────────────────
+    if (launchCooldown > 0) {
+      launchCooldown -= dt;
+      // Convert continuous speed vectors smoothly relative to frame time delta
+      finalMx = launchVelocity.x * dt;
+      finalMz = launchVelocity.z * dt;
+    } else {
+      // Not locked in launch flight? Run distance checks on active map jumpers
+      const pPos = pBody.translation();
+      
+      for (const pad of activeLaunchPads) {
+        const insideX = Math.abs(pPos.x - pad.x) < (pad.w / 2 + 0.5);
+        const insideZ = Math.abs(pPos.z - pad.z) < (pad.d / 2 + 0.5);
+        const insideY = Math.abs(pPos.y - pad.y) < 1.5;
+
+        if (insideX && insideZ && insideY) {
+          launchVelocity = { ...pad.force };
+          launchCooldown = 0.50; // Block player input fighting for 0.5s during flight path
+          vy = pad.force.y;      // Deliver direct upward momentum velocity burst
+          
+          finalMx = launchVelocity.x * dt;
+          finalMz = launchVelocity.z * dt;
+          break;
+        }
+      }
+    }
+
+    // 3. Commit calculated movement forces to Rapier controller
+    const desiredMove = {x: finalMx, y: vy * dt, z: finalMz};
     controller.computeColliderMovement(pCollider, desiredMove);
     const corrected = controller.computedMovement();
 
@@ -427,20 +430,18 @@ if (launchCooldown > 0) {
 
       const closestPointOnRay = checkOrigin.clone().add(checkDir.clone().multiplyScalar(projection));
       
-      // If an enemy is within 1.8 units of your center screen line, and within range (120 units)
       if (targetPos.distanceTo(closestPointOnRay) < 1.8 && checkOrigin.distanceTo(targetPos) < 120) { 
         targetInSight = true;
-        break; // Found an enemy, stop looking
+        break; 
       }
     }
 
-    // Update crosshair HTML styles instantly based on targeting detection state
     if (crosshairEl) {
       if (targetInSight) {
-        crosshairEl.style.borderColor = '#ff355e'; // Turn Red
-        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.3)'; // Scale up slightly
+        crosshairEl.style.borderColor = '#ff355e'; 
+        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.3)'; 
       } else {
-        crosshairEl.style.borderColor = '#ffffff'; // Reset back to default White
+        crosshairEl.style.borderColor = '#ffffff'; 
         crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.0)';
       }
     }
