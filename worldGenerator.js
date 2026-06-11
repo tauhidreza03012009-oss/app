@@ -78,14 +78,14 @@ export function addSniperTower(scene, world, R, x, z) {
   addStaticWall(scene, world, R, x + 3.4, th + 1, z, 0.3, 1.5, 7, stoneMat);
 }
 
-// ── AUTOCALCULATED INCLINE GENERATOR ──────────────────────────────────────────
+// ── AUTOCALCULATED INCLINE GENERATOR (FIXED DIRECTION MATH) ───────────────────
 export function addRamp(scene, world, R, x, groundZ, targetHeight, rampLength, width = 4, direction = 1) {
   // Compute precise trigonometric pitch angle automatically
   const rx = Math.asin(targetHeight / rampLength) * direction; 
   
-  // Derive perfect midpoints to avoid elevation hovering or wall clipping gaps
+  // The center calculation handles the vector projection correctly on the ground
   const y = targetHeight / 2;
-  const z = groundZ - (Math.cos(rx) * rampLength / 2) * direction;
+  const z = groundZ + (Math.cos(Math.abs(rx)) * rampLength / 2) * direction;
 
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 0.4, rampLength), woodMat);
   mesh.position.set(x, y, z);
