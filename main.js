@@ -231,7 +231,6 @@ async function main(){
     const rayDir = raycaster.ray.direction.clone().normalize();
     const rayOrigin = raycaster.ray.origin.clone();
     
-    // CAMERA FIX: Adjust target aim rotation alignment to avoid snapping backwards
     player.rotation.y = Math.atan2(rayDir.x, -rayDir.z);
 
     const maxRange = 120;
@@ -284,6 +283,9 @@ async function main(){
   let firstFrame = true;
   let frameCount = 0;
 
+  // Cache element outside the frame loop for rendering efficiency
+  const crosshairEl = document.getElementById('crosshair');
+
   // ── OPTIMIZED PERFORMANCE RUNTIME LOOP ───────────────────────────────────────
   function frame(){
     requestAnimationFrame(frame);
@@ -302,7 +304,6 @@ async function main(){
     if(running && !hasInput) iy = -1;
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
-    // CAMERA FIX: Accurate trigonometric vectors relative to look view matrix orientation
     const mx = ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
     const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
@@ -327,7 +328,6 @@ async function main(){
 
     player.position.set(pos.x + corrected.x, (pos.y + corrected.y) - PH / 2, pos.z + corrected.z);
     
-    // CAMERA FIX: Invert the Z input index matrix inside atan2 so the capsule turns forward away from lens view
     if(hasInput || (running && !hasInput)) {
       player.rotation.y = Math.atan2(mx, -mz);
     }
@@ -377,6 +377,39 @@ async function main(){
     }
 
     camera.lookAt(finalLookAt);
+
+    // ── AUTOMATIC DETECT ENEMIES IN CROSSHAIR DIRECTION ──────────────────────────
+    let targetInSight = false;
+    raycaster.setFromCamera(crosshairVector, camera);
+    const checkDir = raycaster.ray.direction.clone().normalize();
+    const checkOrigin = raycaster.ray.origin.clone();
+
+    for (const id in remotePlayers) {
+      const targetPos = remotePlayers[id].position.clone().add(new THREE.Vector3(0, 1.0, 0));
+      const toTarget = targetPos.clone().sub(checkOrigin);
+      const projection = toTarget.dot(checkDir);
+      if (projection < 0) continue; 
+
+      const closestPointOnRay = checkOrigin.clone().add(checkDir.clone().multiplyScalar(projection));
+      
+      // If an enemy is within 1.8 units of your center screen line, and within range (120 units)
+      if (targetPos.distanceTo(closestPointOnRay) < 1.8 && checkOrigin.distanceTo(targetPos) < 120) { 
+        targetInSight = true;
+        break; // Found an enemy, stop looking
+      }
+    }
+
+    // Update crosshair HTML styles instantly based on targeting detection state
+    if (crosshairEl) {
+      if (targetInSight) {
+        crosshairEl.style.borderColor = '#ff355e'; // Turn Red
+        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.3)'; // Scale up slightly
+      } else {
+        crosshairEl.style.borderColor = '#ffffff'; // Reset back to default White
+        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.0)';
+      }
+    }
+
     ring.rotation.z = elapsed * 2;
 
     renderer.setViewport(0, 0, innerWidth, innerHeight);
