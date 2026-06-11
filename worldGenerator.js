@@ -2,28 +2,24 @@ import * as THREE from 'three';
 import { grassMat, pathMat, woodMat, roofMat, leafMat, stoneMat, crateMat, borderMat } from './materials.js';
 
 // ── CORE COMPONENT ENGINE ───────────────────────────────────────────────────
-// Keep track of all active launchpads so the player script can read them
 export const activeLaunchPads = [];
 
 // ── HIGH-VELOCITY JUMPER (LAUNCHPAD) MODULE ──────────────────────────────────
 export function buildJumper(scene, world, R, x, y, z, w, d, launchX, launchY, launchZ) {
-  const h = 0.15; // Sleek, low-profile pad
+  const h = 0.15; 
   
-  // 1. Bright, distinct visual mesh (using borderMat or a bright accent mat)
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), borderMat);
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   scene.add(mesh);
 
-  // 2. Fixed physics body
   const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z));
   
-  // 3. CRITICAL: Set as a SENSOR so the player capsule doesn't collide/trip over it
+  // Set as sensor container so players don't hit physical step collision thresholds
   const colliderDesc = R.ColliderDesc.cuboid(w / 2, h / 2, d / 2).setSensor(true);
-  const collider = world.createCollider(colliderDesc, rb);
+  world.createCollider(colliderDesc, rb);
 
-  // 4. Save the configuration data for your movement script to read
   const padConfig = {
     x, y, z,
     w, d,
@@ -52,70 +48,56 @@ function createRigidMesh(scene, world, R, x, y, z, w, h, d, material, rx = 0, ry
   return mesh;
 }
 
-// ── CLEAN HOLLOW INTERIORS ───────────────────────────────────────────────────
-
 // ── PRECISION MULTI-STORY APARTMENT BUILDINGS ───────────────────────────────
 function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
-  const wallThick = 0.5; // Sharp, thin walls to prevent bulky clipping
-  const rampW = 4.0;     // Fixed comfortable width for the interior walkway
+  const wallThick = 0.5; 
+  const rampW = 4.0;     
 
   for (let i = 0; i < floors; i++) {
     const yBase = i * floorH;
 
-    // 1. FLOOR PLANES WITH INTEGRATED STAIRWELL HOLES
     if (i === 0) {
-      // Ground floor baseline plate
       createRigidMesh(scene, world, R, x, yBase + 0.1, z, w, 0.2, d, stoneMat);
     } else {
-      // Upper Floors: Cut a precise hole on the right-hand side for the ramp to emerge
-      // Main floor deck (Left side)
       createRigidMesh(scene, world, R, x - rampW / 2, yBase + 0.1, z, w - rampW, 0.2, d, stoneMat);
-      // Safety walkways around the hole (Front and Back segments)
       createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z + d / 3, rampW, 0.2, d / 3, stoneMat);
       createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z - d / 3, rampW, 0.2, d / 3, stoneMat);
     }
 
-    // 2. FLUSH OUTER WALLS (No overlapping corner gaps)
-    createRigidMesh(scene, world, R, x, yBase + floorH / 2, z - d / 2 + wallThick / 2, w, floorH, wallThick, stoneMat); // Back Wall
-    createRigidMesh(scene, world, R, x - w / 2 + wallThick / 2, yBase + floorH / 2, z, wallThick, floorH, d - wallThick * 2, stoneMat); // Left Wall
-    createRigidMesh(scene, world, R, x + w / 2 - wallThick / 2, yBase + floorH / 2, z, wallThick, floorH, d - wallThick * 2, stoneMat); // Right Wall
+    createRigidMesh(scene, world, R, x, yBase + floorH / 2, z - d / 2 + wallThick / 2, w, floorH, wallThick, stoneMat); 
+    createRigidMesh(scene, world, R, x - w / 2 + wallThick / 2, yBase + floorH / 2, z, wallThick, floorH, d - wallThick * 2, stoneMat); 
+    createRigidMesh(scene, world, R, x + w / 2 - wallThick / 2, yBase + floorH / 2, z, wallThick, floorH, d - wallThick * 2, stoneMat); 
 
-    // 3. STYLIZED FRONT FAÇADE WITH WINDOW PILLARS (Matches your reference image)
     const pillarW = 2.5;
-    // Left, Right, and Center structural columns
     createRigidMesh(scene, world, R, x - w / 2 + pillarW / 2, yBase + floorH / 2, z + d / 2 - wallThick / 2, pillarW, floorH, wallThick, borderMat);
     createRigidMesh(scene, world, R, x + w / 2 - pillarW / 2, yBase + floorH / 2, z + d / 2 - wallThick / 2, pillarW, floorH, wallThick, borderMat);
     createRigidMesh(scene, world, R, x, yBase + floorH / 2, z + d / 2 - wallThick / 2, pillarW, floorH, wallThick, borderMat);
 
-    // Top window headers closing off the frames
     const windowW = w / 2 - pillarW;
     createRigidMesh(scene, world, R, x - w / 4, yBase + floorH - 0.6, z + d / 2 - wallThick / 2, windowW, 1.2, wallThick, borderMat);
     createRigidMesh(scene, world, R, x + w / 4, yBase + floorH - 0.6, z + d / 2 - wallThick / 2, windowW, 1.2, wallThick, borderMat);
 
     if (i > 0) {
-      // Upper floors get safety window sills (creates a perfect square window cutout)
       createRigidMesh(scene, world, R, x - w / 4, yBase + 0.6, z + d / 2 - wallThick / 2, windowW, 1.2, wallThick, borderMat);
       createRigidMesh(scene, world, R, x + w / 4, yBase + 0.6, z + d / 2 - wallThick / 2, windowW, 1.2, wallThick, borderMat);
-    } // Note: Ground floor skips the lower sills so they act as two wide door entryways!
+    } 
 
-    // 4. FLUSH SIDE-WALL RAMPS (Tucked cleanly against the right interior wall)
     if (i < floors - 1) {
-      const rampRun = d - 2.0; // Stop short of hitting the front/back walls
+      const rampRun = d - 2.0; 
       const rampLength = Math.sqrt(rampRun * rampRun + floorH * floorH);
-      const rampAngle = Math.atan2(floorH, rampRun); // Tilted cleanly up towards the back stairwell hole
+      const rampAngle = Math.atan2(floorH, rampRun); 
 
       createRigidMesh(
         scene, world, R,
-        x + w / 2 - wallThick - rampW / 2, // Hugs the right interior wall perfectly
-        yBase + floorH / 2,                // Centers perfectly between floors
-        z,                                 // Center aligned on Z axis
+        x + w / 2 - wallThick - rampW / 2, 
+        yBase + floorH / 2,                
+        z,                                 
         rampW, 0.15, rampLength, woodMat,
-        rampAngle, 0, 0                    // Rotates cleanly up on the X axis
+        rampAngle, 0, 0                    
       );
     }
   }
 
-  // Roof decorative crown cap
   createRigidMesh(scene, world, R, x, floors * floorH + 0.1, z, w + 0.8, 0.2, d + 0.8, roofMat);
 }
 
@@ -123,27 +105,21 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
 function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
   const wallThick = 0.5;
   
-  // Floor plate & Roof slab overhang trims
   createRigidMesh(scene, world, R, x, 0.1, z, w, 0.2, d, stoneMat);
   createRigidMesh(scene, world, R, x, h + 0.1, z, w + 0.6, 0.2, d + 0.6, roofMat);
 
-  // Shell
-  createRigidMesh(scene, world, R, x, h / 2, z - d / 2 + wallThick / 2, w, h, wallThick, stoneMat); // Back
-  createRigidMesh(scene, world, R, x - w / 2 + wallThick / 2, h / 2, z, wallThick, h, d - wallThick * 2, stoneMat); // Left
-  createRigidMesh(scene, world, R, x + w / 2 - wallThick / 2, h / 2, z, wallThick, h, d - wallThick * 2, stoneMat); // Right
+  createRigidMesh(scene, world, R, x, h / 2, z - d / 2 + wallThick / 2, w, h, wallThick, stoneMat); 
+  createRigidMesh(scene, world, R, x - w / 2 + wallThick / 2, h / 2, z, wallThick, h, d - wallThick * 2, stoneMat); 
+  createRigidMesh(scene, world, R, x + w / 2 - wallThick / 2, h / 2, z, wallThick, h, d - wallThick * 2, stoneMat); 
 
-  // Clean Front Open Showroom Windows
   const pillarW = 2.0;
   createRigidMesh(scene, world, R, x - w / 2 + pillarW / 2, h / 2, z + d / 2 - wallThick / 2, pillarW, h, wallThick, borderMat);
   createRigidMesh(scene, world, R, x + w / 2 + pillarW / 2, h / 2, z + d / 2 - wallThick / 2, pillarW, h, wallThick, borderMat);
-  createRigidMesh(scene, world, R, x, h - 0.6, z + d / 2 - wallThick / 2, w - pillarW * 2, 1.2, wallThick, borderMat); // Top Header
+  createRigidMesh(scene, world, R, x, h - 0.6, z + d / 2 - wallThick / 2, w - pillarW * 2, 1.2, wallThick, borderMat); 
 
-  // Signage structure
   createRigidMesh(scene, world, R, x, h * 0.75, z + d / 2 + 0.3, w + 0.2, 0.2, 0.8, roofMat);
   createRigidMesh(scene, world, R, x, h * 0.9, z + d / 2 + 0.05, w * 0.85, 0.8, 0.1, signMat);
 }
-
-
 
 function buildPropTree(scene, world, R, x, z) {
   createRigidMesh(scene, world, R, x, 2.5, z, 0.6, 5.0, 0.6, woodMat, 0, 0, 0, true);
@@ -162,25 +138,21 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   const HALF_MAP = MAP_SIZE / 2;
   const avW = 24;
 
-  // Level Floor Map Plates
   const baseFloor = new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE), stoneMat);
   baseFloor.rotation.x = -Math.PI / 2; baseFloor.receiveShadow = true; scene.add(baseFloor);
   const floorRB = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0, -0.5, 0));
   world.createCollider(R.ColliderDesc.cuboid(HALF_MAP, 0.5, HALF_MAP), floorRB);
 
-  // Arena Background Sky Capsule
   const skyGeo = new THREE.SphereGeometry(295, 32, 16);
   const skyMat = new THREE.MeshBasicMaterial({ color: 0x9eccfa, side: THREE.BackSide });
   scene.add(new THREE.Mesh(skyGeo, skyMat));
 
-  // Outer Border Containment Walls
   const WH = 18;
   createRigidMesh(scene, world, R, 0, WH / 2, HALF_MAP, MAP_SIZE, WH, 4, borderMat, 0, 0, 0, false);
   createRigidMesh(scene, world, R, 0, WH / 2, -HALF_MAP, MAP_SIZE, WH, 4, borderMat, 0, 0, 0, false);
   createRigidMesh(scene, world, R, HALF_MAP, WH / 2, 0, 4, WH, MAP_SIZE, borderMat, 0, 0, 0, false);
   createRigidMesh(scene, world, R, -HALF_MAP, WH / 2, 0, 4, WH, MAP_SIZE, borderMat, 0, 0, 0, false);
 
-  // Main Boulevard Roads Network Matrix
   const plazaPlat = new THREE.Mesh(new THREE.PlaneGeometry(64, 64), pathMat);
   plazaPlat.rotation.x = -Math.PI / 2; plazaPlat.position.set(0, 0.02, 0); plazaPlat.receiveShadow = true; scene.add(plazaPlat);
 
@@ -190,12 +162,13 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
     { x: (HALF_MAP + 32) / 2, z: 0, w: HALF_MAP - 32, d: avW },
     { x: -(HALF_MAP + 32) / 2, z: 0, w: HALF_MAP - 32, d: avW }
   ];
-  // Example 1: Place a pad in the Residential Sector that flings you North onto the Apartment roof
-// Arguments: (scene, world, R, X, Y, Z, Width, Depth, LaunchX, LaunchY, LaunchZ)
-buildJumper(scene, world, R, -74, 0.1, 95, 4, 4, 0, 18, -15); 
 
-// Example 2: Place a pad near the center plaza that launches you across the street eastward
-buildJumper(scene, world, R, -20, 0.1, 0, 4, 4, 25, 12, 0);
+  // ── INTEGRATED TUNED LAUNCHPAD INSTANCES ────────────────────────────────────
+  // Launcher 1: South side of Residential Sector. Roof height clear.
+  buildJumper(scene, world, R, -74, 0.1, 95, 5, 5, 0, 26, 0.75); 
+
+  // Launcher 2: Center Plaza layout. Long eastbound horizontal trajectory.
+  buildJumper(scene, world, R, -20, 0.1, 0, 4, 4, 1.2, 16, 0);
   
   roads.forEach(r => {
     const track = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.d), pathMat);
@@ -210,7 +183,6 @@ buildJumper(scene, world, R, -20, 0.1, 0, 4, 4, 25, 12, 0);
     }
   });
 
-  // Central Obelisk Platform Structure Base
   createRigidMesh(scene, world, R, 0, 0.4, 0, 44, 0.8, 44, stoneMat);
   createRigidMesh(scene, world, R, 0, 1.2, 0, 34, 0.8, 34, stoneMat);
   createRigidMesh(scene, world, R, 0, 2.4, 0, 24, 1.6, 24, stoneMat);
@@ -221,11 +193,9 @@ buildJumper(scene, world, R, -20, 0.1, 0, 4, 4, 25, 12, 0);
   // ── QUADRANT 1: HOLLOW RESIDENTIAL MODULES (NORTH-WEST) ──────────────────────
   const nwGrass = new THREE.Mesh(new THREE.PlaneGeometry(108, 108), grassMat); nwGrass.rotation.x = -Math.PI / 2; nwGrass.position.set(-70, 0.03, 70); scene.add(nwGrass);
 
-  // Explorable multi-story units with optimized inner-pathing ramps
   buildExplorableApartment(scene, world, R, -74, 116, 24, 5.5, 22, 4);
   buildExplorableApartment(scene, world, R, -114, 116, 24, 5.5, 22, 4);
 
-  // Row House Block Assemblies
   createRigidMesh(scene, world, R, -38, 4.5, 42, 12, 9, 14, woodMat, 0, Math.PI / 2, 0);
   createRigidMesh(scene, world, R, -38, 4.5, 59, 12, 9, 14, woodMat, 0, Math.PI / 2, 0);
   createRigidMesh(scene, world, R, -38, 4.5, 76, 12, 9, 14, woodMat, 0, Math.PI / 2, 0);
@@ -242,7 +212,6 @@ buildJumper(scene, world, R, -20, 0.1, 0, 4, 4, 25, 12, 0);
   createRigidMesh(scene, world, R, -68, 6, -54, 46, 12, 32, crateMat);
   createRigidMesh(scene, world, R, -68, 12.3, -54, 48, 0.6, 34, roofMat);
 
-  // Dense Double-Stacked Matrix Cargo Freight Containers
   createRigidMesh(scene, world, R, -118, 2.5, -116, 14, 5, 7, roofMat);
   createRigidMesh(scene, world, R, -118, 7.5, -116, 14, 5, 7, crateMat);
   createRigidMesh(scene, world, R, -102, 2.5, -116, 14, 5, 7, borderMat);
@@ -250,26 +219,21 @@ buildJumper(scene, world, R, -20, 0.1, 0, 4, 4, 25, 12, 0);
   createRigidMesh(scene, world, R, -86, 2.5, -116, 14, 5, 7, crateMat);
   createRigidMesh(scene, world, R, -86, 7.5, -116, 14, 5, 7, roofMat);
 
-  // Terminal Silos
   createRigidMesh(scene, world, R, -125, 7, -132, 12, 14, 12, stoneMat);
   createRigidMesh(scene, world, R, -109, 5, -132, 8, 10, 8, stoneMat);
 
-  // Obstacle cover blocks
   createRigidMesh(scene, world, R, -36, 1.5, -36, 3, 3, 3, woodMat);
   createRigidMesh(scene, world, R, -31, 1.5, -36, 3, 3, 3, woodMat);
 
   // ── QUADRANT 3: DOWNTOWN COMMERCE SHOPS PLAZA (TOP-RIGHT) ───────────────────
   const nePlaza = new THREE.Mesh(new THREE.PlaneGeometry(108, 108), woodMat); nePlaza.rotation.x = -Math.PI / 2; nePlaza.position.set(70, 0.03, 70); scene.add(nePlaza);
 
-  // Anchor Supercenter Store
   createRigidMesh(scene, world, R, 112, 7.5, 48, 38, 15, 26, roofMat);
 
-  // Fully open, interior explorable boutique line items
   buildExplorableShop(scene, world, R, 54, 40, 16, 9, 14, woodMat);
   buildExplorableShop(scene, world, R, 54, 57, 16, 9, 14, borderMat);
   buildExplorableShop(scene, world, R, 54, 74, 16, 9, 14, stoneMat);
 
-  // High-traffic skybridge pillars
   createRigidMesh(scene, world, R, 40, 15, 122, 18, 30, 18, stoneMat);
   createRigidMesh(scene, world, R, -40, 15, 122, 18, 30, 18, stoneMat);
   createRigidMesh(scene, world, R, 0, 28.5, 122, 62, 1.0, 6.5, borderMat);
@@ -277,14 +241,12 @@ buildJumper(scene, world, R, -20, 0.1, 0, 4, 4, 25, 12, 0);
   // ── QUADRANT 4: CIVIC PARK & MUNICIPAL BANK ASSEMBLY (SOUTH-EAST) ───────────
   const seGrass = new THREE.Mesh(new THREE.PlaneGeometry(108, 108), grassMat); seGrass.rotation.x = -Math.PI / 2; seGrass.position.set(70, 0.03, -70); scene.add(seGrass);
 
-  // Court Hall Assembly Structure
   createRigidMesh(scene, world, R, 66, 6, -54, 34, 13, 24, stoneMat);
   createRigidMesh(scene, world, R, 66, 14.5, -41, 34, 3.0, 4, roofMat);
   createRigidMesh(scene, world, R, 55, 6, -39, 1.2, 13, 1.2, borderMat);
   createRigidMesh(scene, world, R, 66, 6, -39, 1.2, 13, 1.2, borderMat);
   createRigidMesh(scene, world, R, 77, 6, -39, 1.2, 13, 1.2, borderMat);
 
-  // Observation Spire Scaffolding Clock Tower
   const ctH = 24;
   createRigidMesh(scene, world, R, 117.5, ctH / 2, -126.5, 0.8, ctH, 0.8, borderMat);
   createRigidMesh(scene, world, R, 126.5, ctH / 2, -126.5, 0.8, ctH, 0.8, borderMat);
