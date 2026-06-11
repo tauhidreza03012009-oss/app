@@ -1,59 +1,195 @@
 * {
-    box-sizing: border-box;
-    user-select: none;
-    -webkit-user-select: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 html, body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    background-color: #1a1a1a;
-    overflow: hidden;
-    position: relative;
-}
-
-#game-container {
-    width: 100vw;
-    height: 100vh;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f0f4f8;
 }
 
 canvas {
-    display: block;
-    width: 100% !important;
-    height: 100% !important;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
 }
 
-/* Bright Neon Joystick Base */
-#joystick-zone {
-    position: absolute;
-    bottom: 60px;
-    left: 60px;
-    width: 130px;
-    height: 130px;
-    background: rgba(0, 255, 204, 0.1); /* Subtle neon tint */
-    border: 3px solid #00ffcc;          /* Bright Cyan Border */
-    border-radius: 50%;
-    z-index: 9999;                      /* Force it on top of everything */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: none;
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+#jst {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  touch-action: none;
 }
 
-/* Bright Joystick Knob */
-#joystick-handle {
-    width: 55px;
-    height: 55px;
-    background: #00ffcc;                /* Solid Cyan Center */
-    border: 2px solid #ffffff;
-    border-radius: 50%;
-    transition: transform 0.05s linear;
-    box-shadow: 0 0 20px #00ffcc, inset 0 0 5px rgba(255, 255, 255, 0.8);
+#crosshair {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#crosshair::before {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+}
+
+#crosshair::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.4), 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+#jsk {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 35%, #ffdd67, #ffaa00);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+#jmp {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+  color: #333;
+  font-size: 11px;
+  letter-spacing: 2px;
+  touch-action: none;
+}
+
+#run {
+  position: fixed;
+  bottom: 125px;
+  right: 30px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+  color: #333;
+  font-size: 11px;
+  letter-spacing: 2px;
+  touch-action: none;
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s;
+}
+
+#run.active {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+}
+
+#fir {
+  position: fixed;
+  bottom: 30px;
+  right: 125px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  z-index: 99;
+  background: rgba(255, 53, 94, 0.1);
+  border: 2px solid rgba(255, 53, 94, 0.4);
+  box-shadow: 0 0 15px rgba(255, 53, 94, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+  color: #ff355e;
+  font-size: 11px;
+  letter-spacing: 2px;
+  touch-action: none;
+  font-weight: bold;
+}
+
+#fir:active {
+  background: rgba(255, 53, 94, 0.4);
+  color: #fff;
+}
+
+#leaderboard {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 12px;
+  font-family: monospace;
+  border-radius: 6px;
+  z-index: 99;
+  font-size: 12px;
+  letter-spacing: 1px;
+  min-width: 140px;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+#scores-list div {
+  margin-top: 4px;
+  color: #00e5ff;
+}
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4f8;
+  z-index: 9999;
+  font-family: monospace;
+  color: #333;
+  font-size: 14px;
+  letter-spacing: 4px;
+  gap: 10px;
 }
