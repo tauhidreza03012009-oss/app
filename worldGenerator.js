@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { grassMat, pathMat, woodMat, roofMat, leafMat, stoneMat, crateMat, borderMat } from './materials.js';
 
-// ── BASIC WALL GENERATOR ─────────────────────────────────────────────────────
+// ── BASIC WALL GENERATOR (WITH SHADOW CONTROLS) ──────────────────────────────
 export function addStaticWall(scene, world, R, x, y, z, w, h, d, material = borderMat, castShadow = true){
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   mesh.position.set(x, y, z);
@@ -13,7 +13,7 @@ export function addStaticWall(scene, world, R, x, y, z, w, h, d, material = bord
   world.createCollider(R.ColliderDesc.cuboid(w / 2, h / 2, d / 2), rb);
 }
 
-// ── FLAT FLOOR PATHWAY GENERATOR ──────────────────────────────────────────────
+// ── ROAD AND SURFACE GENERATOR ────────────────────────────────────────────────
 export function addPath(scene, x, z, w, d) {
   const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), pathMat);
   pathMesh.rotation.x = -Math.PI / 2;
@@ -22,58 +22,55 @@ export function addPath(scene, x, z, w, d) {
   scene.add(pathMesh);
 }
 
-// ── RESIDENTIAL BUILDING MODULE ────────────────────────────────────────────────
-export function addHouse(scene, world, R, x, z, w = 14, h = 9, d = 14) {
-  addStaticWall(scene, world, R, x, h / 2, z, w, h, d, woodMat, true);
-  addStaticWall(scene, world, R, x, h + 0.2, z, w + 1, 0.4, d + 1, roofMat, true);
-}
-
-// ── NATURAL ENVIRONMENT SCENERY ───────────────────────────────────────────────
-export function addTree(scene, world, R, x, z, trunkH = 5) {
-  addStaticWall(scene, world, R, x, trunkH / 2, z, 1.0, trunkH, 1.0, woodMat, true);
-  addStaticWall(scene, world, R, x, trunkH + 1.5, z, 4.5, 2.5, 4.5, leafMat, false); // Performance save
-}
-
-export function addCrate(scene, world, R, x, z, size = 3, castShadow = true) {
-  addStaticWall(scene, world, R, x, size / 2, z, size, size, size, crateMat, castShadow);
-}
-
-// Concrete/Stone Barricades (Street Dividers / Planters)
-export function addBarricade(scene, world, R, x, z, rotationY = 0, width = 6) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 2.0, 1.0), stoneMat);
-  mesh.position.set(x, 1.0, z);
-  mesh.rotation.y = rotationY;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  scene.add(mesh);
-
-  const q = new THREE.Quaternion().setFromEuler(mesh.rotation);
-  const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, 1.0, z).setRotation({x: q.x, y: q.y, z: q.z, w: q.w}));
-  world.createCollider(R.ColliderDesc.cuboid(width / 2, 1.0, 0.5), rb);
-}
-
-// ── LOCKED-FLAT OVERHEAD CROSSING BRIDGE ──────────────────────────────────────
-export function addSkyBridge(scene, world, R, x, y, z, w, h, d, material = woodMat) {
-  addStaticWall(scene, world, R, x, y, z, w, h, d, material, true);
-}
-
-// ── URBAN WATCHTOWER / CRANE SCALED UP ────────────────────────────────────────
-export function addSniperTower(scene, world, R, x, z) {
-  const th = 11;
-  addStaticWall(scene, world, R, x - 3.4, th / 2, z - 3.4, 0.6, th, 0.6, stoneMat, true);
-  addStaticWall(scene, world, R, x + 3.4, th / 2, z - 3.4, 0.6, th, 0.6, stoneMat, true);
-  addStaticWall(scene, world, R, x - 3.4, th / 2, z + 3.4, 0.6, th, 0.6, stoneMat, false);
-  addStaticWall(scene, world, R, x + 3.4, th / 2, z + 3.4, 0.6, th, 0.6, stoneMat, false);
+// ── COMPLEX BUILDING MODULES (IMAGE INSPIRED) ──────────────────────────────────
+export function addComplexBuilding(scene, world, R, x, z, w, h, d, levels = 1, material = woodMat) {
+  // Main building body structure
+  addStaticWall(scene, world, R, x, h / 2, z, w, h, d, material, true);
+  // Tiered flat roof setup to match architectural style
+  addStaticWall(scene, world, R, x, h + 0.1, z, w + 0.6, 0.2, d + 0.6, roofMat, true);
   
-  addStaticWall(scene, world, R, x, th, z, 7.5, 0.4, 7.5, woodMat, true);
-  addStaticWall(scene, world, R, x, th + 1, z - 3.6, 7.5, 1.6, 0.3, stoneMat, true); 
-  addStaticWall(scene, world, R, x - 3.6, th + 1, z, 0.3, 1.6, 7.5, stoneMat, true);  
-  addStaticWall(scene, world, R, x + 3.6, th + 1, z, 0.3, 1.6, 7.5, stoneMat, true);  
-  addStaticWall(scene, world, R, x - 2.2, th + 1, z + 3.6, 2.2, 1.6, 0.3, stoneMat, false); 
-  addStaticWall(scene, world, R, x + 2.2, th + 1, z + 3.6, 2.2, 1.6, 0.3, stoneMat, false); 
+  if (levels > 1) { // Render structural floor tiers for high rises
+    for (let i = 1; i < levels; i++) {
+      const tierY = (h / levels) * i;
+      addStaticWall(scene, world, R, x, tierY, z, w + 0.2, 0.15, d + 0.2, stoneMat, false);
+    }
+  }
 }
 
-// ── AUTOCALCULATED INCLINE GENERATOR ──────────────────────────────────────────
+// ── COMPACT TREE LINES (LOW POLY FLUIDITY) ───────────────────────────────────
+export function addTree(scene, world, R, x, z, trunkH = 4.5) {
+  addStaticWall(scene, world, R, x, trunkH / 2, z, 0.8, trunkH, 0.8, woodMat, true);
+  // Boxy low-poly leaves to accurately mimic the reference render aesthetic
+  addStaticWall(scene, world, R, x, trunkH + 1.2, z, 3.2, 2.2, 3.2, leafMat, false);
+}
+
+// ── INDUSTRIAL CONTAINER FIELDS ──────────────────────────────────────────────
+export function addShippingContainer(scene, world, R, x, yOffset, z, w, h, d, material) {
+  addStaticWall(scene, world, R, x, yOffset + h / 2, z, w, h, d, material, true);
+}
+
+// ── RECREATION OF THE CENTRAL PLAZA MONUMENT ─────────────────────────────────
+export function addCentralMonument(scene, world, R, x, z) {
+  // Tiered steps platform base
+  addStaticWall(scene, world, R, x, 0.4, z, 26, 0.8, 26, stoneMat, true);
+  addStaticWall(scene, world, R, x, 1.2, z, 18, 0.8, 18, stoneMat, true);
+  addStaticWall(scene, world, R, x, 2.4, z, 10, 1.6, 10, stoneMat, true);
+  // Central Column Pillar spire
+  addStaticWall(scene, world, R, x, 8.0, z, 2.2, 10.0, 2.2, stoneMat, true);
+  // Top Monument capstone block
+  addStaticWall(scene, world, R, x, 13.5, z, 1.5, 1.0, 1.5, woodMat, true);
+}
+
+// ── SKYWAY TRANSIT BRIDGE OVERPASS ───────────────────────────────────────────
+export function addSkyBridge(scene, world, R, x, y, z, w, h, d) {
+  addStaticWall(scene, world, R, x, y, z, w, h, d, stoneMat, true);
+  // Left side safety guard rail
+  addStaticWall(scene, world, R, x, y + 1.0, z - d/2, w, 1.8, 0.2, borderMat, false);
+  // Right side safety guard rail
+  addStaticWall(scene, world, R, x, y + 1.0, z + d/2, w, 1.8, 0.2, borderMat, false);
+}
+
+// ── AUTOCALCULATED STRUCTURAL ACCESS RAMPS ───────────────────────────────────
 export function addRamp(scene, world, R, x, groundZ, targetHeight, rampLength, width = 4, direction = 1) {
   const rx = Math.asin(targetHeight / rampLength) * direction; 
   const y = targetHeight / 2;
@@ -91,9 +88,9 @@ export function addRamp(scene, world, R, x, groundZ, targetHeight, rampLength, w
   world.createCollider(R.ColliderDesc.cuboid(width / 2, 0.2, rampLength / 2), rb);
 }
 
-// ── INITIAL LEVEL COMPOSITION CONTROLLER ──────────────────────────────────────
+// ── FULL MAP LAYOUT MASTER ARCHITECT ─────────────────────────────────────────
 export function buildMapLayout(scene, world, R, MAP_SIZE) {
-  // Base Urban Foundation Ground Mesh
+  // Map Base Grass Ground Canvas
   const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE), grassMat); 
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.receiveShadow = true;
@@ -102,109 +99,121 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   const fBody = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0, -0.5, 0));
   world.createCollider(R.ColliderDesc.cuboid(MAP_SIZE / 2, 0.5, MAP_SIZE / 2), fBody);
 
-  // Peripheral Perimeter City Walls (Blocks the edge of the world map)
+  // Structural Boundary Containment Walls
   const H_WALL = 18; const HALF_M = MAP_SIZE / 2;
   addStaticWall(scene, world, R, 0, H_WALL / 2, HALF_M, MAP_SIZE, H_WALL, 4, borderMat, false);   
   addStaticWall(scene, world, R, 0, H_WALL / 2, -HALF_M, MAP_SIZE, H_WALL, 4, borderMat, false);  
   addStaticWall(scene, world, R, HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE, borderMat, false);   
   addStaticWall(scene, world, R, -HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE, borderMat, false);  
 
-  // Sky Environment
+  // Sky Backdrop Sphere Dome
   const geo = new THREE.SphereGeometry(280, 24, 12);
-  const mat = new THREE.MeshBasicMaterial({ color: 0x8fc2ff, side: THREE.BackSide, fog: false });
+  const mat = new THREE.MeshBasicMaterial({ color: 0x9eccfa, side: THREE.BackSide, fog: false });
   scene.add(new THREE.Mesh(geo, mat));
 
-  // ── 1. CITY GRID HIGHWAYS (MAIN STREET BOULEVARDS) ─────────────────────────
-  // A perfect geometric crossroad dividing the city into 4 balanced, clean districts
-  addPath(scene, 0, 0, 50, 50);        // Grand Central Intersection Plaza
-  addPath(scene, 0, 95, 20, 140);     // North Avenue
-  addPath(scene, 0, -95, 20, 140);    // South Avenue
-  addPath(scene, 95, 0, 140, 20);     // East Boulevard
-  addPath(scene, -95, 0, 140, 20);    // West Boulevard
+  // ── 1. MAIN ROAD GRID INFRASTRUCTURE ───────────────────────────────────────
+  addPath(scene, 0, 0, 56, 56);         // Central Plaza Boulevard Core
+  addPath(scene, 0, 95, 22, 140);       // North Highway Axis
+  addPath(scene, 0, -95, 22, 140);      // South Highway Axis
+  addPath(scene, 95, 0, 140, 22);       // East Boulevard Axis
+  addPath(scene, -95, 0, 140, 22);      // West Boulevard Axis
 
-  // ── 2. CENTRAL PLAZA LANDMARK (THE PLAZA FOUNTAIN / MONUMENT) ──────────────
-  // The absolute middle of the city, styled like an architectural courtyard monument
-  addStaticWall(scene, world, R, 0, 1.5, 0, 18, 3, 18, stoneMat, true); // Raised Monument Base
-  addStaticWall(scene, world, R, 0, 5.0, 0, 4, 4, 4, stoneMat, true);   // Pillar Column
+  // ── 2. CENTER MONUMENT CONSTRUCTION ────────────────────────────────────────
+  addCentralMonument(scene, world, R, 0, 0);
   
-  // Street Corner Traffic Planters / Barricades protecting the intersections
-  addBarricade(scene, world, R, -16, 16, Math.PI / 4, 6);
-  addBarricade(scene, world, R, 16, 16, -Math.PI / 4, 6);
-  addBarricade(scene, world, R, -16, -16, -Math.PI / 4, 6);
-  addBarricade(scene, world, R, 16, -16, Math.PI / 4, 6);
+  // Symmetrical Inner Courtyard Concrete Fencing
+  addStaticWall(scene, world, R, -24, 1, 24, 6, 2, 0.8, stoneMat, true);
+  addStaticWall(scene, world, R, 24, 1, 24, 6, 2, 0.8, stoneMat, true);
+  addStaticWall(scene, world, R, -24, 1, -24, 6, 2, 0.8, stoneMat, true);
+  addStaticWall(scene, world, R, 24, 1, -24, 6, 2, 0.8, stoneMat, true);
 
-  // ── 3. NORTH-WEST DISTRICT: THE RESIDENTIAL SECTOR ────────────────────────
-  // Structured city block containing parallel houses and a narrow alleyway
-  addHouse(scene, world, R, -45, 45, 16, 10, 16);   // Apartment complex 1
-  addHouse(scene, world, R, -45, 75, 16, 10, 16);   // Apartment complex 2
-  addHouse(scene, world, R, -75, 45, 14, 9, 14);    // Side Townhouse
-  // Side Streets/Alleys inside the residential block
-  addPath(scene, -45, 60, 10, 14);
-  addPath(scene, -60, 45, 14, 10);
-
-  // ── 4. NORTH-EAST DISTRICT: COMMERCIAL MARKET SQUARE ──────────────────────
-  // Clean store facades lined up along the boulevard sidewalk with a brick courtyard
-  addHouse(scene, world, R, 45, 45, 18, 9, 14);     // Front Cafe / Store Front
-  addHouse(scene, world, R, 80, 50, 14, 11, 20);    // The Department Store
-  addHouse(scene, world, R, 45, 80, 16, 9, 16);     // Corner Grocery Outlet
-  addBarricade(scene, world, R, 32, 32, 0, 8);      // Front Sidewalk Barrier
-
-  // ── 5. SOUTH-WEST DISTRICT: INDUSTRIAL FREIGHT & CONSTRUCTION SITE ────────
-  // A grid of organized storage containers and building supplies instead of messy objects
-  addHouse(scene, world, R, -55, -55, 24, 12, 24);  // The Central Factory Warehouse
+  // ── 3. BOTTOM-LEFT QUADRANT: THE CARGO SHIPMENT LOGISTICS YARD ──────────────
+  // Dark grey industrial concrete tarmac overlay foundation
+  addPath(scene, -85, -85, 110, 110);
   
-  // Cleanly aligned row grids of storage cargo palettes (Construction Zone)
-  addCrate(scene, world, R, -22, -35, 4, true);
-  addCrate(scene, world, R, -22, -41, 4, true);
-  addCrate(scene, world, R, -22, -47, 4, true);
+  // Distribution Warehouse Facility
+  addComplexBuilding(scene, world, R, -75, -55, 36, 12, 24, 1, stoneMat);
   
-  addCrate(scene, world, R, -35, -22, 4, true);
-  addCrate(scene, world, R, -41, -22, 4, true);
+  // Arranged Freight Freight Container Matrix Rows
+  // Stack group 1: Front left row
+  addShippingContainer(scene, world, R, -125, 0, -50, 6, 6, 12, crateMat);
+  addShippingContainer(scene, world, R, -118, 0, -50, 6, 6, 12, borderMat);
+  addShippingContainer(scene, world, R, -112, 0, -50, 6, 6, 12, roofMat);
+  addShippingContainer(scene, world, R, -118, 6, -50, 6, 6, 12, crateMat); // Double stacked layer
   
-  // Double-stacked supply container
-  addCrate(scene, world, R, -35, -35, 3.5, true);
-  addStaticWall(scene, world, R, -35, 5.2, -35, 3, 3, 3, crateMat, true);
+  // Stack group 2: Back left row blocks
+  addShippingContainer(scene, world, R, -120, 0, -95, 12, 6, 6, roofMat);
+  addShippingContainer(scene, world, R, -106, 0, -95, 12, 6, 6, crateMat);
+  addShippingContainer(scene, world, R, -92, 0, -95, 12, 6, 6, borderMat);
+  addShippingContainer(scene, world, R, -78, 0, -95, 12, 6, 6, roofMat);
+  
+  addShippingContainer(scene, world, R, -113, 6, -95, 12, 6, 6, borderMat);
+  addShippingContainer(scene, world, R, -85, 6, -95, 12, 6, 6, crateMat);
 
-  // ── 6. SOUTH-EAST DISTRICT: BANK & GOVERNMENT PLAZA ───────────────────────
-  // Rigid, symmetrical architectural layout representing a secure institutional sector
-  addHouse(scene, world, R, 50, -50, 20, 11, 20);   // The Central Bank Building
-  addHouse(scene, world, R, 85, -50, 16, 9, 16);    // Annex Records Office
-  // Symmetrical courtyard barrier designs (Security pillars)
-  addBarricade(scene, world, R, 32, -45, Math.PI / 2, 6);
-  addBarricade(scene, world, R, 32, -55, Math.PI / 2, 6);
-  addBarricade(scene, world, R, 45, -32, 0, 6);
+  // Small supply pallet stacks scattered near lines of sight
+  addStaticWall(scene, world, R, -42, 2, -45, 4, 4, 4, crateMat, true);
+  addStaticWall(scene, world, R, -42, 2, -51, 4, 4, 4, crateMat, true);
+  addStaticWall(scene, world, R, -42, 5.5, -48, 3, 3, 3, woodMat, true);
 
-  // ── 7. SKYWAYS & ROOFTOP PASSAGES ──────────────────────────────────────────
-  // Highly realistic sky-bridges connecting the high-rise roofs across the street grid
-  addRamp(scene, world, R, -45, 24.0, 10.0, 22, 4.5, 1);  // South-West Warehouse Ramp
-  addRamp(scene, world, R, 45, 24.0, 9.0, 22, 4.5, 1);    // North-East Market Ramp
-  addSkyBridge(scene, world, R, 0, 10.2, 45, 72, 0.3, 4, woodMat); // Grand overpass crossing across the North Avenue
+  // ── 4. TOP-LEFT QUADRANT: RESIDENTIAL ESTATE & POWER PLANT ──────────────────
+  // Aligned residential townhouse blocks
+  addComplexBuilding(scene, world, R, -55, 45, 12, 10, 30, 2, woodMat);
+  addComplexBuilding(scene, world, R, -80, 45, 12, 10, 30, 2, woodMat);
+  
+  // Multi-tier urban high rise apartment blocks flanking back alleyways
+  addComplexBuilding(scene, world, R, -120, 75, 14, 22, 14, 4, stoneMat);
+  addComplexBuilding(scene, world, R, -120, 45, 14, 22, 14, 4, stoneMat);
 
-  // ── 8. DEFENSIVE CORNER UTILITY INFRASTRUCTURE ─────────────────────────────
-  // The 4 map corners contain distinct infrastructure facilities acting as vertical combat towers
-  addSniperTower(scene, world, R, -115, 115); addRamp(scene, world, R, -115, 119.5, 11.0, 26, 3.5, 1);  // Power Substation Tower
-  addSniperTower(scene, world, R, 115, -115); addRamp(scene, world, R, 115, -119.5, 11.0, 26, 3.5, -1); // Water Processing Tower
-  addSniperTower(scene, world, R, 115, 115);  addRamp(scene, world, R, 115, 119.5, 11.0, 26, 3.5, 1);  // Radio Communication Tower
-  addSniperTower(scene, world, R, -115, -115); addRamp(scene, world, R, -115, -119.5, 11.0, 26, 3.5, -1); // Clock tower scaffold
+  // Far Back Left Power Grid Substation Fencing Layout
+  addStaticWall(scene, world, R, -115, 4, 115, 25, 8, 2, borderMat, true); // Transformer block cage
+  addStaticWall(scene, world, R, -125, 2, 100, 2, 4, 12, stoneMat, false);
 
-  // ── 9. BOULEVARD TREE LANES (REALISTIC LINEAR FOLIAGE) ─────────────────────
-  // Instead of noisy rings, trees are neatly lined up along the edges of sidewalks, exactly like real life city blocks.
-  const streetSidewalks = [
-    // North Avenue Sidewalk Lines
-    [-13, 40], [-13, 65], [-13, 90], [-13, 115],
-    [13, 40], [13, 65], [13, 90], [13, 115],
-    // South Avenue Sidewalk Lines
-    [-13, -40], [-13, -65], [-13, -90], [-13, -115],
-    [13, -40], [13, -65], [13, -90], [13, -115],
-    // East Boulevard Sidewalk Lines
-    [40, 13], [65, 13], [90, 13], [115, 13],
-    [40, -13], [65, -13], [90, -13], [115, -13],
-    // West Boulevard Sidewalk Lines
-    [-40, 13], [-65, 13], [-90, 13], [-115, 13],
-    [-40, -13], [-65, -13], [-90, -13], [-115, -13]
+  // ── 5. TOP-RIGHT QUADRANT: DOWNTOWN COMMERCIAL DISTRICT & SKYBRIDGE ──────────
+  // Corner Shopping Complex Outlet Center
+  addComplexBuilding(scene, world, R, 95, 50, 32, 12, 24, 1, roofMat); // Department store
+  
+  // Aligned strip block stores (Café / Bodegas) facing avenues
+  addComplexBuilding(scene, world, R, 55, 65, 14, 9, 14, 1, woodMat);
+  addComplexBuilding(scene, world, R, 55, 85, 14, 9, 14, 1, stoneMat);
+  
+  // High-rise structures with interconnecting rooftop skyways crossing avenues
+  addComplexBuilding(scene, world, R, 40, 125, 16, 26, 16, 5, stoneMat); // Block Alpha
+  addComplexBuilding(scene, world, R, -40, 125, 16, 26, 16, 5, stoneMat); // Block Beta Cross-Street
+  addSkyBridge(scene, world, R, 0, 23.5, 125, 64, 0.4, 6);              // Overhead high structural bridge
+
+  // ── 6. BOTTOM-RIGHT QUADRANT: FINANCIAL PLAZA & HISTORIC CLOCK TOWER ────────
+  // Symmetrical municipal bank branch pavilion
+  addComplexBuilding(scene, world, R, 65, -55, 26, 12, 20, 2, stoneMat);
+  addComplexBuilding(scene, world, R, 105, -55, 20, 10, 20, 1, woodMat); // Administration annex office
+  
+  // The Historic Skeleton Framework Clock Tower Facility Base (Vantage Point)
+  const tx = 115; const tz = -115;
+  addStaticWall(scene, world, R, tx - 3, 7, tz - 3, 0.6, 14, 0.6, borderMat, true);
+  addStaticWall(scene, world, R, tx + 3, 7, tz - 3, 0.6, 14, 0.6, borderMat, true);
+  addStaticWall(scene, world, R, tx - 3, 7, tz + 3, 0.6, 14, 0.6, borderMat, true);
+  addStaticWall(scene, world, R, tx + 3, 7, tz + 3, 0.6, 14, 0.6, borderMat, true);
+  addStaticWall(scene, world, R, tx, 14.2, tz, 7.5, 0.4, 7.5, woodMat, true); // Observation platform Deck
+  addStaticWall(scene, world, R, tx, 17.5, tz, 6.0, 6.0, 6.0, stoneMat, true); // Rigid clock head unit
+  addRamp(scene, world, R, tx, tz + 10, 14.0, 28, 3.5, -1);                  // Access scaffolding ramp system
+
+  // ── 7. PERIMETER HIGHWAY LINEAR TREE AVENUE BOULEVARDS ─────────────────────
+  // Neat, uniformly spaced arrays running flawlessly along all internal sidewalks 
+  const avenueTreeCoordinates = [
+    // North Boulevard Lane Rows
+    [-14, 42], [-14, 64], [-14, 86], [-14, 108],
+    [14, 42], [14, 64], [14, 86], [14, 108],
+    // South Boulevard Lane Rows
+    [-14, -42], [-14, -64], [-14, -86], [-14, -108],
+    [14, -42], [14, -64], [14, -86], [14, -108],
+    // East Boulevard Lane Rows
+    [42, 14], [64, 14], [86, 14], [108, 14],
+    [42, -14], [64, -14], [86, -14], [108, -14],
+    // West Boulevard Lane Rows
+    [-42, 14], [-64, 14], [-86, 14], [-108, 14],
+    [-42, -14], [-64, -14], [-86, -14], [-108, -14]
   ];
 
-  streetSidewalks.forEach(([tx, tz]) => {
-    addTree(scene, world, R, tx, tz, 5.5);
+  avenueTreeCoordinates.forEach(([xPos, zPos]) => {
+    addTree(scene, world, R, xPos, zPos, 5.0);
   });
 }
