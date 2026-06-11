@@ -473,30 +473,33 @@ async function main(){
     vy = 0; 
   });
 
-  // ── SHOOTING LOGIC (HIGH CAM / OVER-THE-SHOULDER) ───────────────────────────
+    // ── SHOOTING LOGIC (ACCURATE TARGETING TRACKING) ───────────────────────────
   function fireWeapon() {
-    // 1. Calculate vector ray shooting straight out of camera view center
+    // 1. Get the direction the camera is looking
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
     
-    // 2. Align player mesh rotation parallel to the ground 
+    // 2. Align player character body rotation to face the horizontal sightline
     const shootingDirection = new THREE.Vector3(cameraDirection.x, 0, cameraDirection.z).normalize();
     player.rotation.y = Math.atan2(shootingDirection.x, shootingDirection.z);
 
-    // 3. Start laser from the weapon's physical position (chest level)
+    // 3. Define the starting point at chest height relative to the player capsule
     const origin = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
     
-    // 4. Force the trajectory path to align perfectly with where the camera looks
-    const direction = cameraDirection.clone().normalize(); 
+    // 4. Project the target point out in space along the camera vector
+    const maxRange = 100;
+    const targetPointInSpace = camera.position.clone().add(cameraDirection.clone().multiplyScalar(maxRange));
     
-    const maxRange = 100; // Increased range for high-angle shots
+    // 5. Calculate the exact trajectory line from character chest to that target point
+    const direction = targetPointInSpace.clone().sub(origin).normalize();
     const endPoint = origin.clone().add(direction.clone().multiplyScalar(maxRange));
     
+    // Create the visible line geometry
     const lineGeo = new THREE.BufferGeometry().setFromPoints([origin, endPoint]);
-    const lineMat = new THREE.LineBasicMaterial({color: 0xff355e, linewidth: 5});
+    const lineMat = new THREE.LineBasicMaterial({color: 0xff355e, linewidth: 6});
     const tracer = new THREE.Line(lineGeo, lineMat);
     
-    // Bypass frustum culling so the line never disappears when aiming high
+    // Force renderer visualization visibility constraints bypass
     tracer.frustumCulled = false; 
     
     scene.add(tracer);
@@ -516,7 +519,6 @@ async function main(){
       const closestPointOnRay = origin.clone().add(direction.clone().multiplyScalar(projection));
       const lateralDist = targetPos.distanceTo(closestPointOnRay);
 
-      // Hitbox radius checks
       if (lateralDist < 1.5) { 
         const distance = origin.distanceTo(targetPos);
         if (distance < closestDist) {
