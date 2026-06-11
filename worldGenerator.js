@@ -59,23 +59,26 @@ export function addSkyBridge(scene, world, R, x, y, z, w, h, d, material = woodM
   world.createCollider(R.ColliderDesc.cuboid(w / 2, h / 2, d / 2), rb);
 }
 
-// ── SNIPER OUTPOST DEFENSE PLATFORM ────────────────────────────────────────────
 export function addSniperTower(scene, world, R, x, z) {
   const th = 11;
-  // Support Pillars
-  addStaticWall(scene, world, R, x - 3, th / 2, z - 3, 0.5, th, 0.5, woodMat);
-  addStaticWall(scene, world, R, x + 3, th / 2, z - 3, 0.5, th, 0.5, woodMat);
-  addStaticWall(scene, world, R, x - 3, th / 2, z + 3, 0.5, th, 0.5, woodMat);
-  addStaticWall(scene, world, R, x + 3, th / 2, z + 3, 0.5, th, 0.5, woodMat);
+  // Support Pillars (Widened out slightly from 3 to 3.4 so you don't hit them coming off the ramp)
+  addStaticWall(scene, world, R, x - 3.4, th / 2, z - 3.4, 0.5, th, 0.5, woodMat);
+  addStaticWall(scene, world, R, x + 3.4, th / 2, z - 3.4, 0.5, th, 0.5, woodMat);
+  addStaticWall(scene, world, R, x - 3.4, th / 2, z + 3.4, 0.5, th, 0.5, woodMat);
+  addStaticWall(scene, world, R, x + 3.4, th / 2, z + 3.4, 0.5, th, 0.5, woodMat);
   
   // Floor Deck
-  addStaticWall(scene, world, R, x, th, z, 7, 0.4, 7, woodMat);
+  addStaticWall(scene, world, R, x, th, z, 7.2, 0.4, 7.2, woodMat);
   
-  // Guard Rails
-  addStaticWall(scene, world, R, x, th + 1, z - 3.4, 7, 1.5, 0.3, stoneMat);
-  addStaticWall(scene, world, R, x, th + 1, z + 3.4, 7, 1.5, 0.3, stoneMat);
-  addStaticWall(scene, world, R, x - 3.4, th + 1, z, 0.3, 1.5, 7, stoneMat);
-  addStaticWall(scene, world, R, x + 3.4, th + 1, z, 0.3, 1.5, 7, stoneMat);
+  // Solid Guard Rails (Left, Right, and Back)
+  addStaticWall(scene, world, R, x, th + 1, z - 3.5, 7.2, 1.5, 0.3, stoneMat); // Back
+  addStaticWall(scene, world, R, x - 3.5, th + 1, z, 0.3, 1.5, 7.2, stoneMat);  // Left
+  addStaticWall(scene, world, R, x + 3.5, th + 1, z, 0.3, 1.5, 7.2, stoneMat);  // Right
+
+  // FRONT RAIL WITH A DOORWAY: Split into two small side pieces so the center is completely open!
+  // Creates a 3.2-unit wide entry hole right where the ramp ends
+  addStaticWall(scene, world, R, x - 2.2, th + 1, z + 3.5, 2.0, 1.5, 0.3, stoneMat); // Front Left Rail
+  addStaticWall(scene, world, R, x + 2.2, th + 1, z + 3.5, 2.0, 1.5, 0.3, stoneMat); // Front Right Rail
 }
 
 // ── AUTOCALCULATED INCLINE GENERATOR (FIXED DIRECTION MATH) ───────────────────
