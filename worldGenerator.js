@@ -62,13 +62,13 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
   for (let i = 0; i < floors; i++) {
     const yBase = i * floorH;
     
-    // ── CHANGED: Every floor base layer (Ground floor + Upper platforms) is now bright red! ──
+    // Every floor base layer (Ground floor + Upper platforms) is now bright red!
     if (i === 0) {
       createRigidMesh(scene, world, R, x, yBase + 0.1, z, w, 0.2, d, redFloorMat);
     } else {
       createRigidMesh(scene, world, R, x - rampW / 2, yBase + 0.1, z, w - rampW, 0.2, d, redFloorMat);
       createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z + d / 3, rampW, 0.2, d / 3, redFloorMat);
-      createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z, rampW, 0.2, d / 3, redFloorMat);
+      createRigidMesh(scene, world, R, x + (w - rampW) / 2, yBase + 0.1, z - d / 3, rampW, 0.2, d / 3, redFloorMat);
     }
 
     createRigidMesh(scene, world, R, x, yBase + floorH / 2, z - d / 2 + wallThick / 2, w, floorH, wallThick, stoneMat); 
@@ -102,7 +102,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
 function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
   const wallThick = 0.5;
   
-  // ── CHANGED: Shop interior floors are now red! ──
+  // Shop interior floors are now red
   createRigidMesh(scene, world, R, x, 0.1, z, w, 0.2, d, redFloorMat);
   
   createRigidMesh(scene, world, R, x, h + 0.1, z, w + 0.6, 0.2, d + 0.6, roofMat);
@@ -131,23 +131,28 @@ function buildStreetLight(scene, world, R, x, z, ry = 0) {
 }
 
 export function buildMapLayout(scene, world, R, MAP_SIZE) {
-  const HALF_MAP = MAP_SIZE / 2; 
+  const HALF_MAP = MAP_SIZE / 2; // Equals 400
   const avW = 28; 
 
+  // Visual Ground Floor Plane
   const baseFloor = new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE), stoneMat);
   baseFloor.rotation.x = -Math.PI / 2; baseFloor.receiveShadow = true; scene.add(baseFloor);
+  
+  // Physical Ground Floor Collider Box (With safety cushion boundaries)
   const floorRB = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0, -0.5, 0));
-  world.createCollider(R.ColliderDesc.cuboid(HALF_MAP, 0.5, HALF_MAP), floorRB);
+  world.createCollider(R.ColliderDesc.cuboid(HALF_MAP + 10, 0.5, HALF_MAP + 10), floorRB);
 
   const skyGeo = new THREE.SphereGeometry(695, 32, 16); 
   const skyMat = new THREE.MeshBasicMaterial({ color: 0x9eccfa, side: THREE.BackSide });
   scene.add(new THREE.Mesh(skyGeo, skyMat));
 
+  // Outer Border Walls (Aligned perfectly between visual scale & physics extents)
   const WH = 28; 
-  createRigidMesh(scene, world, R, 0, WH / 2, HALF_MAP, MAP_SIZE, WH, 4, borderMat, 0, 0, 0, false);
-  createRigidMesh(scene, world, R, 0, WH / 2, -HALF_MAP, MAP_SIZE, WH, 4, borderMat, 0, 0, 0, false);
-  createRigidMesh(scene, world, R, HALF_MAP, WH / 2, 0, 4, WH, MAP_SIZE, borderMat, 0, 0, 0, false);
-  createRigidMesh(scene, world, R, -HALF_MAP, WH / 2, 0, 4, WH, MAP_SIZE, borderMat, 0, 0, 0, false);
+  const wallThick = 4;
+  createRigidMesh(scene, world, R, 0, WH / 2, -HALF_MAP, MAP_SIZE, WH, wallThick, borderMat, 0, 0, 0, false);
+  createRigidMesh(scene, world, R, 0, WH / 2, HALF_MAP, MAP_SIZE, WH, wallThick, borderMat, 0, 0, 0, false);
+  createRigidMesh(scene, world, R, HALF_MAP, WH / 2, 0, wallThick, WH, MAP_SIZE, borderMat, 0, 0, 0, false);
+  createRigidMesh(scene, world, R, -HALF_MAP, WH / 2, 0, wallThick, WH, MAP_SIZE, borderMat, 0, 0, 0, false);
 
   const plazaPlat = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), pathMat); 
   plazaPlat.rotation.x = -Math.PI / 2; plazaPlat.position.set(0, 0.02, 0); plazaPlat.receiveShadow = true; scene.add(plazaPlat);
@@ -179,7 +184,7 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   createRigidMesh(scene, world, R, 0, 24.5, 0, 6.8, 30.0, 6.8, stoneMat);
   createRigidMesh(scene, world, R, 0, 40.0, 0, 3.4, 2.0, 3.4, woodMat);
 
-  // NW
+  // NW - Residential Block
   const nwGrass = new THREE.Mesh(new THREE.PlaneGeometry(250, 250), grassMat); nwGrass.rotation.x = -Math.PI / 2; nwGrass.position.set(-160, 0.03, 160); scene.add(nwGrass);
   buildExplorableApartment(scene, world, R, -140, 220, 28, 6.0, 24, 5); 
   buildExplorableApartment(scene, world, R, -200, 220, 28, 6.0, 24, 5); 
@@ -191,7 +196,7 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   createRigidMesh(scene, world, R, -220, 4, 140, 26, 8, 32, borderMat, 0, 0, 0, false);
   createRigidMesh(scene, world, R, -220, 5, 142, 8, 10, 8, stoneMat);
 
-  // SW
+  // SW - Freight Block
   const swTarmac = new THREE.Mesh(new THREE.PlaneGeometry(250, 250), stoneMat); swTarmac.rotation.x = -Math.PI / 2; swTarmac.position.set(-160, 0.03, -160); scene.add(swTarmac);
   createRigidMesh(scene, world, R, -150, 8, -140, 60, 16, 40, crateMat); 
   createRigidMesh(scene, world, R, -150, 16.3, -140, 64, 0.6, 44, roofMat);
@@ -199,7 +204,7 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   createRigidMesh(scene, world, R, -240, 12, -220, 20, 8, 12, crateMat);
   createRigidMesh(scene, world, R, -200, 4, -220, 20, 8, 12, borderMat);
 
-  // NE
+  // NE - Commercial District
   const nePlaza = new THREE.Mesh(new THREE.PlaneGeometry(250, 250), woodMat); nePlaza.rotation.x = -Math.PI / 2; nePlaza.position.set(160, 0.03, 160); scene.add(nePlaza);
   createRigidMesh(scene, world, R, 220, 10, 140, 50, 20, 36, roofMat); 
   buildExplorableShop(scene, world, R, 110, 110, 20, 10, 16, woodMat); 
@@ -208,7 +213,7 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   createRigidMesh(scene, world, R, 140, 25, 260, 30, 50, 30, stoneMat); 
   createRigidMesh(scene, world, R, -140, 25, 260, 30, 50, 30, stoneMat); 
 
-  // SE
+  // SE - High-rise Bank District
   const seGrass = new THREE.Mesh(new THREE.PlaneGeometry(250, 250), grassMat); seGrass.rotation.x = -Math.PI / 2; seGrass.position.set(160, 0.03, -160); scene.add(seGrass);
   createRigidMesh(scene, world, R, 150, 8, -130, 44, 16, 34, stoneMat); 
   createRigidMesh(scene, world, R, 150, 17.5, -110, 44, 3.0, 6, roofMat);
@@ -221,11 +226,11 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   createRigidMesh(scene, world, R, 250, 45, -230, 16.5, 10.0, 16.5, stoneMat); 
   createRigidMesh(scene, world, R, 250, 50.6, -230, 18.2, 1.4, 18.2, roofMat);
 
-  // Mega Skyscrapers
+  // Corporate Metropolis Skyscrapers
   createRigidMesh(scene, world, R, 310, 35, -120, 45, 70, 45, stoneMat); 
   createRigidMesh(scene, world, R, 120, 45, -310, 40, 90, 40, borderMat); 
 
-  // Launchpads
+  // Launchpads setup
   buildJumper(scene, world, R, -140, 0.2, 170, -140, 30.5, 220, 1.10);
   buildJumper(scene, world, R, -200, 0.2, 170, -200, 30.5, 220, 1.10);
   buildJumper(scene, world, R, -150, 0.2, -90, -150, 17.0, -140, 1.00);
