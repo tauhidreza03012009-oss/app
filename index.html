@@ -209,88 +209,137 @@ minimapCamera.lookAt(0, 0, 0);
   // ── PHYSICS WORLD ────────────────────────────────────────────────────────────
   const world=new R.World({x:0,y:-32,z:0});
 
-  // Environment Setup
-  const wallMat=new THREE.MeshStandardMaterial({color:0xd2d7df,roughness:0.6});
-  const innerWallMat=new THREE.MeshStandardMaterial({color:0xc0c6cf,roughness:0.5});
-  const pillarMat=new THREE.MeshStandardMaterial({color:0xa8afb8,roughness:0.5});
-  const detailMat=new THREE.MeshStandardMaterial({color:0xffaa00,metalness:0.1,roughness:0.4});
-  const platformMat=new THREE.MeshStandardMaterial({color:0xb2b8c2,roughness:0.7});
+  // ── VILLAGE ENVIRONMENT SETUP ────────────────────────────────────────────────
+  // Color palette updates to create an outdoor nature look
+  const grassMat   = new THREE.MeshStandardMaterial({color: 0x4c7c4c, roughness: 0.9});
+  const pathMat    = new THREE.MeshStandardMaterial({color: 0xdfc49f, roughness: 0.8});
+  const woodMat    = new THREE.MeshStandardMaterial({color: 0x6f4e37, roughness: 0.7});
+  const roofMat    = new THREE.MeshStandardMaterial({color: 0xb23b3b, roughness: 0.6});
+  const leafMat    = new THREE.MeshStandardMaterial({color: 0x2e5c2e, roughness: 0.9});
+  const stoneMat   = new THREE.MeshStandardMaterial({color: 0x7a828a, roughness: 0.6});
+  const crateMat   = new THREE.MeshStandardMaterial({color: 0xc69c6d, roughness: 0.5});
+  const borderMat  = new THREE.MeshStandardMaterial({color: 0x2b3e2b, roughness: 0.9});
 
   const MAP_SIZE = 360;
-  const floorGeo=new THREE.PlaneGeometry(MAP_SIZE,MAP_SIZE);
-  const floorMat=new THREE.MeshStandardMaterial({color:0xe2e7ef,roughness:0.4});
-  const floorMesh=new THREE.Mesh(floorGeo,floorMat);
-  floorMesh.rotation.x=-Math.PI/2;
-  floorMesh.receiveShadow=true;
+  const floorGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
+  const floorMesh = new THREE.Mesh(floorGeo, grassMat); // Now vibrant green grass
+  floorMesh.rotation.x = -Math.PI / 2;
+  floorMesh.receiveShadow = true;
   scene.add(floorMesh);
 
-  const fBody=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0,-0.5,0));
-  world.createCollider(R.ColliderDesc.cuboid(MAP_SIZE/2,0.5,MAP_SIZE/2),fBody);
+  const fBody = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0, -0.5, 0));
+  world.createCollider(R.ColliderDesc.cuboid(MAP_SIZE / 2, 0.5, MAP_SIZE / 2), fBody);
 
-  function addStaticWall(x,y,z,w,h,d,material=wallMat){
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-    mesh.position.set(x,y,z);
-    mesh.castShadow=true;mesh.receiveShadow=true;
+  // Core function to spawn rectangular structures
+  function addStaticWall(x, y, z, w, h, d, material = borderMat) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true; mesh.receiveShadow = true;
     scene.add(mesh);
-    const rb=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x,y,z));
-    world.createCollider(R.ColliderDesc.cuboid(w/2,h/2,d/2),rb);
+    const rb = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z));
+    world.createCollider(R.ColliderDesc.cuboid(w / 2, h / 2, d / 2), rb);
   }
 
-  // Build Map Architecture
-  const H_WALL = 16; const HALF_M = MAP_SIZE/2;
-  addStaticWall(0, H_WALL/2, HALF_M, MAP_SIZE, H_WALL, 2);   
-  addStaticWall(0, H_WALL/2, -HALF_M, MAP_SIZE, H_WALL, 2);  
-  addStaticWall(HALF_M, H_WALL/2, 0, 2, H_WALL, MAP_SIZE);   
-  addStaticWall(-HALF_M, H_WALL/2, 0, 2, H_WALL, MAP_SIZE);  
-  addStaticWall(-60, 6, 95, 2, 12, 60, innerWallMat);  
-  addStaticWall(-60, 6, -95, 2, 12, 60, innerWallMat); 
-  addStaticWall(60, 6, 95, 2, 12, 60, innerWallMat);   
-  addStaticWall(60, 6, -95, 2, 12, 60, innerWallMat);  
-  addStaticWall(-95, 6, -60, 60, 12, 2, innerWallMat); 
-  addStaticWall(95, 6, -60, 60, 12, 2, innerWallMat);  
-  addStaticWall(-95, 6, 60, 60, 12, 2, innerWallMat);  
-  addStaticWall(95, 6, 60, 60, 12, 2, innerWallMat);   
-  addStaticWall(0, 11, -60, 24, 2, 4, detailMat);
-  addStaticWall(0, 11, 60, 24, 2, 4, detailMat);
-  addStaticWall(-60, 11, 0, 4, 2, 24, detailMat);
-  addStaticWall(60, 11, 0, 4, 2, 24, detailMat);
-
-  for(let x of [-20, 20]) {
-    for(let z of [-20, 20]) {
-      addStaticWall(x, 7, z, 4, 14, 4, pillarMat);
-      addStaticWall(x, 14.25, z, 5, 0.5, 5, detailMat); 
-    }
+  // Helper to draw flat paths/roads on the ground (no physics required)
+  function addPath(x, z, w, d) {
+    const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), pathMat);
+    pathMesh.rotation.x = -Math.PI / 2;
+    pathMesh.position.set(x, 0.02, z); // Layered slightly above grass to prevent flickering
+    pathMesh.receiveShadow = true;
+    scene.add(pathMesh);
   }
-  addStaticWall(0, 2, 0, 8, 4, 8, platformMat);
-  addStaticWall(0, 4.25, 0, 6, 0.5, 6, detailMat);
-  addStaticWall(100, 4, 100, 30, 8, 30, wallMat); 
-  addStaticWall(100, 9, 100, 15, 2, 15, platformMat); 
-  addStaticWall(75, 3, 120, 2, 6, 40);
-  addStaticWall(120, 3, 75, 40, 6, 2);
-  for(let i=0; i<4; i++) addStaticWall(70 + (i*20), 5, 145, 3, 10, 3, pillarMat);
-  addStaticWall(-110, 4, 110, 4, 8, 50);
-  addStaticWall(-90, 4, 85, 45, 8, 4);
-  addStaticWall(-70, 4, 120, 4, 8, 35);
-  addStaticWall(-130, 3, 70, 30, 6, 4);
-  addStaticWall(-120, 3, 130, 40, 6, 4);
-  addStaticWall(-95, 1, 120, 16, 2, 16, platformMat);
-  addStaticWall(-95, 2.25, 120, 12, 0.5, 12, detailMat);
-  addStaticWall(110, 8, -110, 8, 16, 8, pillarMat);
-  addStaticWall(130, 6, -90, 6, 12, 6, pillarMat);
-  addStaticWall(90, 5, -130, 5, 10, 5, pillarMat);
-  addStaticWall(85, 7, -85, 10, 14, 10, wallMat);
-  addStaticWall(140, 2, -140, 20, 4, 8);
-  addStaticWall(100, 2, -140, 8, 4, 20);
-  addStaticWall(-100, 5, -100, 40, 10, 4, wallMat);
-  addStaticWall(-120, 5, -80, 4, 10, 44, wallMat);
-  addStaticWall(-80, 5, -120, 4, 10, 44, wallMat);
-  addStaticWall(-100, 2, -100, 12, 4, 12, platformMat);
-  addStaticWall(-100, 4.25, -100, 8, 0.5, 8, detailMat);
-  addStaticWall(-140, 8, -140, 6, 16, 6, pillarMat);
-  addStaticWall(150, 4, 0, 10, 8, 25, innerWallMat);
-  addStaticWall(-150, 4, 0, 10, 8, 25, innerWallMat);
-  addStaticWall(0, 4, 150, 25, 8, 10, innerWallMat);
-  addStaticWall(0, 4, -150, 25, 8, 10, innerWallMat);
+
+  // ── VILLAGE ASSET GENERATORS ───────────────────────────────────────────────
+  
+  // 1. Procedural House (with tiered roof layers so players can climb up)
+  function addHouse(x, z, w = 14, h = 9, d = 14) {
+    // Main structural frame
+    addStaticWall(x, h / 2, z, w, h, d, woodMat);
+    // Overhanging tier 1 roof
+    addStaticWall(x, h + 1, z, w + 2, 2, d + 2, roofMat);
+    // Upper tier 2 roof peak
+    addStaticWall(x, h + 2.5, z, w - 2, 1.5, d - 2, roofMat);
+  }
+
+  // 2. Low-Poly Blocky Trees
+  function addTree(x, z, trunkH = 5) {
+    // Main vertical wood trunk
+    addStaticWall(x, trunkH / 2, z, 1.5, trunkH, 1.5, woodMat);
+    // Dense foliage block layers
+    addStaticWall(x, trunkH + 2, z, 6, 4, 6, leafMat);
+    addStaticWall(x, trunkH + 4.5, z, 4, 2, 4, leafMat);
+  }
+
+  // 3. Jump Crates (Parkour tools scattered next to buildings)
+  function addCrate(x, z, size = 3) {
+    addStaticWall(x, size / 2, z, size, size, size, crateMat);
+  }
+
+  // 4. Central Gathering Well
+  function addTownWell(x, z) {
+    addStaticWall(x - 3, 2, z, 1, 4, 7, stoneMat);
+    addStaticWall(x + 3, 2, z, 1, 4, 7, stoneMat);
+    addStaticWall(x, 2, z - 3, 5, 4, 1, stoneMat);
+    addStaticWall(x, 2, z + 3, 5, 4, 1, stoneMat);
+    // Roof support beams
+    addStaticWall(x - 2, 5.5, z, 0.5, 3, 0.5, woodMat);
+    addStaticWall(x + 2, 5.5, z, 0.5, 3, 0.5, woodMat);
+    // Canopy roof
+    addStaticWall(x, 7.5, z, 6, 1, 7, roofMat);
+  }
+
+  // ── MAP DESIGN LAYOUT ──────────────────────────────────────────────────────
+  // Perimeter boundaries keeping players inside the map
+  const H_WALL = 16; const HALF_M = MAP_SIZE / 2;
+  addStaticWall(0, H_WALL / 2, HALF_M, MAP_SIZE, H_WALL, 4);   
+  addStaticWall(0, H_WALL / 2, -HALF_M, MAP_SIZE, H_WALL, 4);  
+  addStaticWall(HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE);   
+  addStaticWall(-HALF_M, H_WALL / 2, 0, 4, H_WALL, MAP_SIZE);  
+
+  // Roads & Central Plaza Layout
+  addPath(0, 0, 30, 30);         // Center Plaza
+  addPath(0, 80, 14, 130);       // North Road
+  addPath(0, -80, 14, 130);      // South Road
+  addPath(80, 0, 130, 14);       // East Road
+  addPath(-80, 0, 130, 14);      // West Road
+
+  // Place the central landmark
+  addTownWell(0, 0);
+
+  // Neighborhood Districts (Houses + Parkour Crates)
+  // North West District
+  addHouse(-35, 35, 16, 10, 16);
+  addCrate(-23, 30, 3);
+  addCrate(-23, 33, 5); // Double height crate stack to reach the roof
+
+  // North East District
+  addHouse(35, 40, 14, 9, 14);
+  addCrate(25, 40, 3);
+
+  // South West District
+  addHouse(-40, -35, 14, 9, 18);
+  addCrate(-40, -23, 4);
+
+  // South East District (The Mansion / Tallest House)
+  addHouse(45, -45, 20, 14, 20);
+  addCrate(32, -45, 4);
+  addCrate(32, -40, 8);
+
+  // Outpost Homes
+  addHouse(-90, 35, 16, 10, 14);
+  addHouse(90, -35, 14, 9, 16);
+  addHouse(-100, -80, 18, 11, 14);
+  addHouse(100, 80, 16, 10, 16);
+
+  // Forest foliage population (Breaks lines-of-sight and adds cover)
+  const treeLocations = [
+    [-15, 25], [15, 25], [-20, -25], [25, -20],
+    [-70, 40], [70, -40], [40, 80], [-40, -80],
+    [120, 120], [-120, 120], [120, -120], [-120, -120],
+    [-140, 20], [140, -20], [-20, 140], [20, -140]
+  ];
+  treeLocations.forEach(loc => addTree(loc[0], loc[1], 4 + Math.random() * 3));
+
 
   // ── PLAYER SETUP ────────────────────────────────────────────────────────────
   const PH=1.8,PR=0.35;
