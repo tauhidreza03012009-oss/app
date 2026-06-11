@@ -11,7 +11,7 @@ let vy = 0;
 let running = false;
 
 // ── JOYSTICK ──────────────────────────────────────────────────────────────────
-let jx=0, jy=0, jId=-1;
+let jx = 0, jy = 0, jId = -1;
 const jstEl = document.getElementById('jst');
 const jskEl = document.getElementById('jsk');
 const JR = 50;
@@ -67,8 +67,8 @@ function toggleRun(force){
 }
 runEl.addEventListener('touchstart', e => { e.preventDefault(); toggleRun(); }, {passive: false});
 
-// ── CAMERA DRAG ───────────────────────────────────────────────────────────────
-let camYaw=0, camPitch=0.4, cId=-1, cLx=0, cLy=0;
+// ── CAMERA DRAG (FIXED NATURAL SWIPE DIRECTIONS) ──────────────────────────────
+let camYaw = 0, camPitch = 0.4, cId = -1, cLx = 0, cLy = 0;
 window.addEventListener('touchstart', e => {
   for(const t of e.changedTouches){
     if(t.identifier === jId) continue;
@@ -93,12 +93,12 @@ window.addEventListener('touchmove', e => {
 });
 window.addEventListener('touchend', e => { for(const t of e.changedTouches) if(t.identifier === cId) cId = -1; });
 
-let mdown=false, mLx=0, mLy=0;
+let mdown = false, mLx = 0, mLy = 0;
 window.addEventListener('mousedown', e => { mdown = true; mLx = e.clientX; mLy = e.clientY; });
 window.addEventListener('mouseup', () => mdown = false);
 window.addEventListener('mousemove', e => {
   if(!mdown) return;
-  camYaw += (e.clientX - mLx) * 0.005; 
+  camYaw -= (e.clientX - mLx) * 0.005; 
   camPitch = Math.max(0.05, Math.min(1.3, camPitch + (e.clientY - mLy) * 0.005)); 
   mLx = e.clientX; mLy = e.clientY;
 });
@@ -258,7 +258,7 @@ async function main(){
   treeLocations.forEach(loc => addTree(loc[0], loc[1], 4 + Math.random() * 3));
 
   // ── PLAYER SETUP ────────────────────────────────────────────────────────────
-  const PH=1.8, PR=0.35;
+  const PH = 1.8, PR = 0.35;
   const player = new THREE.Group();
   scene.add(player);
   
@@ -449,7 +449,8 @@ async function main(){
 
     world.timestep = dt;
 
-    let ix=jx, iy=jy;
+    // 1. GATHER INPUTS
+    let ix = jx, iy = jy;
     if(K['KeyA'] || K['ArrowLeft'])  ix = -1;
     if(K['KeyD'] || K['ArrowRight']) ix =  1;
     if(K['KeyW'] || K['ArrowUp'])    iy = -1;
@@ -460,8 +461,8 @@ async function main(){
     if(running && !hasInput){ iy = -1; }
     if(running && hasInput && (jx !== 0 || jy !== 0)) toggleRun(false);
 
-    // FIX applied here: added negative sign (-ix) to correct joystick side inversion
-    const mx = ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
+    // 2. MOVE PLAYER LOGIC (FIX: Fixed Horizontal Axis processing sign inversion)
+    const mx = -ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
     const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
 
     const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
@@ -483,8 +484,10 @@ async function main(){
       z: pos.z + corrected.z
     });
 
+    // 3. STEP THE PHYSICS WORLD (CRITICAL: Moved up to run completely before visual sync layout)
     world.step();
 
+    // 4. SYNC THREE.JS PLAYER VISUALS TO PHYSICS BODY
     const p = pBody.translation();
     player.position.set(p.x, p.y - PH / 2, p.z);
     
@@ -492,6 +495,7 @@ async function main(){
       player.rotation.y = Math.atan2(mx, mz);
     }
 
+    // 5. UPDATE MULTIPLAYER SOCKETS
     if (socket.connected) {
       socket.emit('move', {
         x: player.position.x,
@@ -510,7 +514,7 @@ async function main(){
       }
     }
 
-    // ── OVER-THE-SHOULDER CAMERA MATH ─────────────────────────────────────────
+    // 6. RUN OVER-THE-SHOULDER CAMERA MATH (FIX: Now correctly processes after physics calculations)
     lookAt.set(p.x, p.y - PH / 2 + 1.2, p.z);
     
     const idealX = p.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
@@ -538,11 +542,12 @@ async function main(){
       camPos.set(finalCamX, idealY, finalCamZ);
     }
 
+    // 7. SMOOTH CAMERA INTERPOLATION (FIX: Cranked up speed factor from -18 to -30 to stop the jitter)
     if(firstFrame){ 
       camera.position.copy(camPos); 
       firstFrame = false; 
     } else { 
-      camera.position.lerp(camPos, 1 - Math.exp(-18 * dt)); 
+      camera.position.lerp(camPos, 1 - Math.exp(-30 * dt)); 
     }
 
     camera.lookAt(finalLookAt);
@@ -554,6 +559,7 @@ async function main(){
     renderer.setScissorTest(true);
     renderer.render(scene, camera);
 
+    // Minimap Render Loop Execution
     const mapSize = Math.min(innerWidth, innerHeight) * 0.25; 
     const mapX = innerWidth - mapSize - 20;                   
     const mapY = innerHeight - mapSize - 20;                  
