@@ -68,8 +68,8 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
       createRigidMesh(buildingGroup, world, R, x, yBase + 0.1, z, w, 0.2, d, redFloorMat);
     } else {
       createRigidMesh(buildingGroup, world, R, x - rampW / 2, yBase + 0.1, z, w - rampW, 0.2, d, redFloorMat);
-      createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z-d/8, rampW, 0.2, d/4, redFloorMat);
-      createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z+d/8, rampW, 0.2, d/4, redFloorMat);
+      createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z-3*d/8, rampW, 0.2, d/4, redFloorMat);
+      createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z+3*d/8, rampW, 0.2, d/4, redFloorMat);
       
     }
 
