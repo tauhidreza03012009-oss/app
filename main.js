@@ -6,25 +6,25 @@ import { activeLaunchPads } from './worldGenerator.js';
 let audioCtx = null;
 let laserBuffer = null;
 let jumpBuffer = null;
+let springBuffer = null;
 
 async function initAudio() {
   if (audioCtx) return;
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    const [laserRes, jumpRes] = await Promise.all([
+    const [laserRes, jumpRes, springRes] = await Promise.all([
       fetch('./laser.mp3'),
-      fetch('./jump.mp3')
+      fetch('./jump.mp3'),
+      fetch('./spring.mp3')
     ]);
-
-    const [laserArr, jumpArr] = await Promise.all([
+    const [laserArr, jumpArr, springArr] = await Promise.all([
       laserRes.arrayBuffer(),
-      jumpRes.arrayBuffer()
+      jumpRes.arrayBuffer(),
+      springRes.arrayBuffer()
     ]);
-
     audioCtx.decodeAudioData(laserArr, b => { laserBuffer = b; }, e => { alert('Laser decode error: ' + e); });
     audioCtx.decodeAudioData(jumpArr, b => { jumpBuffer = b; }, e => { alert('Jump decode error: ' + e); });
-
+    audioCtx.decodeAudioData(springArr, b => { springBuffer = b; }, e => { alert('Spring decode error: ' + e); });
   } catch(e) {
     alert('Audio failed: ' + e.message);
   }
@@ -46,16 +46,24 @@ function playJump() {
   source.start(0);
 }
 
+function playSpring() {
+  if (!audioCtx || !springBuffer) return;
+  const source = audioCtx.createBufferSource();
+  source.buffer = springBuffer;
+  source.connect(audioCtx.destination);
+  source.start(0);
+}
+
 window.addEventListener('touchstart', initAudio, { once: true });
 window.addEventListener('mousedown', initAudio, { once: true });
 
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
 const socket = io();
 let myNetworkId = null;
-const remotePlayers = {}; 
-const targetStates = {}; 
+const remotePlayers = {};
+const targetStates = {};
 
-// ── SHARED STATE (LAUNCH SYNC GLOBALIZED) ─────────────────────────────────────
+// ── SHARED STATE ──────────────────────────────────────────────────────────────
 let vy = 0;
 let running = false;
 let launchTimer = 0;
@@ -118,7 +126,7 @@ function toggleRun(force){
 }
 runEl.addEventListener('touchstart', e => { e.preventDefault(); toggleRun(); }, {passive: false});
 
-// ── CAMERA DRAG (NATURAL SWIPE DIRECTION) ─────────────────────────────────────
+// ── CAMERA DRAG ───────────────────────────────────────────────────────────────
 let camYaw = 0, camPitch = 0.4, cId = -1, cLx = 0, cLy = 0;
 window.addEventListener('touchstart', e => {
   for(const t of e.changedTouches){
@@ -136,8 +144,8 @@ window.addEventListener('touchstart', e => {
 window.addEventListener('touchmove', e => {
   for(const t of e.changedTouches) {
     if(t.identifier === cId){
-      camYaw -= (t.clientX - cLx) * 0.005; 
-      camPitch = Math.max(0.05, Math.min(1.3, camPitch + (t.clientY - cLy) * 0.005)); 
+      camYaw -= (t.clientX - cLx) * 0.005;
+      camPitch = Math.max(0.05, Math.min(1.3, camPitch + (t.clientY - cLy) * 0.005));
       cLx = t.clientX; cLy = t.clientY;
     }
   }
@@ -149,8 +157,8 @@ window.addEventListener('mousedown', e => { mdown = true; mLx = e.clientX; mLy =
 window.addEventListener('mouseup', () => mdown = false);
 window.addEventListener('mousemove', e => {
   if(!mdown) return;
-  camYaw -= (e.clientX - mLx) * 0.005; 
-  camPitch = Math.max(0.05, Math.min(1.3, camPitch + (e.clientY - mLy) * 0.005)); 
+  camYaw -= (e.clientX - mLx) * 0.005;
+  camPitch = Math.max(0.05, Math.min(1.3, camPitch + (e.clientY - mLy) * 0.005));
   mLx = e.clientX; mLy = e.clientY;
 });
 
@@ -181,14 +189,14 @@ async function main(){
 
   const scene = new THREE.Scene();
   const skyColor = 0xaaccff;
-  scene.background = new THREE.Color(skyColor); 
-  scene.fog = new THREE.FogExp2(skyColor, 0.003); 
+  scene.background = new THREE.Color(skyColor);
+  scene.fog = new THREE.FogExp2(skyColor, 0.003);
 
-  const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 500); 
+  const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 500);
 
   const minimapCamera = new THREE.OrthographicCamera(-190, 190, 190, -190, 1, 500);
   minimapCamera.position.set(0, 200, 0);
-  minimapCamera.lookAt(0, 0, 0);       
+  minimapCamera.lookAt(0, 0, 0);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.8));
   const sun = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -200,23 +208,22 @@ async function main(){
   sun.shadow.mapSize.set(2048, 2048);
   scene.add(sun);
 
-  // ── PHYSICS SETUP ────────────────────────────────────────────────────────────
+  // ── PHYSICS SETUP ─────────────────────────────────────────────────────────
   const world = new R.World({x: 0, y: -32, z: 0});
   const MAP_SIZE = 360;
-
   buildMapLayout(scene, world, R, MAP_SIZE);
 
-  // ── PLAYER OBJECT GRAPHICS ───────────────────────────────────────────────────
+  // ── PLAYER GRAPHICS ───────────────────────────────────────────────────────
   const PH = 1.8, PR = 0.35;
   const player = new THREE.Group();
   scene.add(player);
-  
+
   const bMesh = new THREE.Mesh(
     new THREE.CapsuleGeometry(PR, PH - PR * 2, 8, 16),
-    new THREE.MeshStandardMaterial({color: 0xff3366, roughness: 0.2}) 
+    new THREE.MeshStandardMaterial({color: 0xff3366, roughness: 0.2})
   );
   bMesh.position.y = PH / 2; bMesh.castShadow = true; player.add(bMesh);
-  
+
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 8, 32), new THREE.MeshStandardMaterial({color: 0xff3366}));
   ring.rotation.x = Math.PI / 2; ring.position.y = 0.05; player.add(ring);
 
@@ -233,7 +240,7 @@ async function main(){
     return group;
   }
 
-  // ── SERVER NETWORK SYNC ──────────────────────────────────────────────────────
+  // ── NETWORK SYNC ──────────────────────────────────────────────────────────
   socket.on('init', id => { myNetworkId = id; });
 
   socket.on('tick', serverPlayers => {
@@ -246,13 +253,10 @@ async function main(){
       }
       listEl.innerHTML = listHTML;
     }
-
     for (const id in serverPlayers) {
       if (id === myNetworkId) continue;
       const pData = serverPlayers[id];
-      if (!remotePlayers[id]) {
-        remotePlayers[id] = createRemotePlayerMesh();
-      }
+      if (!remotePlayers[id]) remotePlayers[id] = createRemotePlayerMesh();
       targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
     }
   });
@@ -266,16 +270,16 @@ async function main(){
 
   socket.on('respawn', () => {
     pBody.setTranslation({ x: (Math.random() - 0.5) * 40, y: 15, z: (Math.random() - 0.5) * 40 }, true);
-    vy = 0; 
+    vy = 0;
     launchTimer = 0;
   });
 
-  // ── WEAPON FIRE TRIGGERS ────────────────────────────────────────────────────
+  // ── WEAPON FIRE ───────────────────────────────────────────────────────────
   document.getElementById('fir').addEventListener('touchstart', e => { e.preventDefault(); fireWeapon(); }, { passive: false });
   window.addEventListener('mousedown', e => { if (e.target.tagName === 'CANVAS') fireWeapon(); });
-  
+
   const raycaster = new THREE.Raycaster();
-  const crosshairVector = new THREE.Vector2(0, 0.2); 
+  const crosshairVector = new THREE.Vector2(0, 0.2);
 
   function fireWeapon() {
     playLaser();
@@ -283,13 +287,13 @@ async function main(){
     raycaster.setFromCamera(crosshairVector, camera);
     const rayDir = raycaster.ray.direction.clone().normalize();
     const rayOrigin = raycaster.ray.origin.clone();
-    
+
     player.rotation.y = Math.atan2(rayDir.x, -rayDir.z);
 
     const maxRange = 120;
     const targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
     const tracerStart = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
-    
+
     const lineGeo = new THREE.BufferGeometry().setFromPoints([tracerStart, targetPointInSpace]);
     const tracer = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({color: 0xff355e, linewidth: 7}));
     tracer.frustumCulled = false; scene.add(tracer);
@@ -301,10 +305,9 @@ async function main(){
       const targetPos = remotePlayers[id].position.clone().add(new THREE.Vector3(0, 1.0, 0));
       const toTarget = targetPos.clone().sub(rayOrigin);
       const projection = toTarget.dot(rayDir);
-      if (projection < 0) continue; 
-
+      if (projection < 0) continue;
       const closestPointOnRay = rayOrigin.clone().add(rayDir.clone().multiplyScalar(projection));
-      if (targetPos.distanceTo(closestPointOnRay) < 1.8) { 
+      if (targetPos.distanceTo(closestPointOnRay) < 1.8) {
         const distance = rayOrigin.distanceTo(targetPos);
         if (distance < closestDist) { closestDist = distance; closestTarget = id; }
       }
@@ -312,12 +315,12 @@ async function main(){
     if (closestTarget) socket.emit('shoot', closestTarget);
   }
 
-  // ── KINEMATIC CHARACTER CONTROLLER CONFIG ────────────────────────────────────
+  // ── CHARACTER CONTROLLER ──────────────────────────────────────────────────
   const controller = world.createCharacterController(0.01);
   controller.setSlideEnabled(true);
   controller.setMaxSlopeClimbAngle(45 * Math.PI / 180);
   controller.setMinSlopeSlideAngle(30 * Math.PI / 180);
-  controller.enableAutostep(0.4, 0.1, true); 
+  controller.enableAutostep(0.4, 0.1, true);
   controller.enableSnapToGround(0.3);
 
   const pBody = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(0, 20, 30));
@@ -328,24 +331,25 @@ async function main(){
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   });
 
-  const MOVE_SPEED = 0.32; 
+  const MOVE_SPEED = 0.32;
   const clock = new THREE.Clock();
   const camPos = new THREE.Vector3();
   const lookAt = new THREE.Vector3();
-  const rayDir = new THREE.Vector3(); 
+  const rayDir = new THREE.Vector3();
   let firstFrame = true;
   let frameCount = 0;
+  let wasOnLaunchPad = false;
 
   const crosshairEl = document.getElementById('crosshair');
 
-  // ── RUNTIME LOOP ────────────────────────────────────────────────────────────
+  // ── GAME LOOP ─────────────────────────────────────────────────────────────
   function frame(){
     requestAnimationFrame(frame);
     const elapsed = clock.elapsedTime;
-    const dt = Math.min(clock.getDelta(), 0.05); 
-    world.timestep = 1 / 60; 
+    const dt = Math.min(clock.getDelta(), 0.05);
+    world.timestep = 1 / 60;
     frameCount++;
-      
+
     let ix = jx, iy = jy;
     if(K['KeyA'] || K['ArrowLeft'])  ix = -1;
     if(K['KeyD'] || K['ArrowRight']) ix =  1;
@@ -363,28 +367,27 @@ async function main(){
     let finalMx = mx * speed;
     let finalMz = mz * speed;
 
-    // ── TRAJECTORY FLIGHT PROCESSING ──────────────────────────────────────────
     if (launchTimer > 0) {
       launchTimer -= dt;
-      controller.enableSnapToGround(false); 
-      
+      controller.enableSnapToGround(false);
       finalMx = activeLaunchVector.x * dt;
-      vy = activeLaunchVector.y; 
+      vy = activeLaunchVector.y;
       finalMz = activeLaunchVector.z * dt;
     } else {
       controller.enableSnapToGround(true);
-      vy -= 28 * dt; 
+      vy -= 28 * dt;
 
       const pos = pBody.translation();
+      let onPadThisFrame = false;
       for (const pad of activeLaunchPads) {
         const insideX = Math.abs(pos.x - pad.x) < (pad.w / 2 + 0.6);
         const insideZ = Math.abs(pos.z - pad.z) < (pad.d / 2 + 0.6);
         const insideY = Math.abs(pos.y - pad.y) < 1.8;
-
         if (insideX && insideZ && insideY) {
-          launchTimer = pad.duration; 
+          onPadThisFrame = true;
+          if (!wasOnLaunchPad) playSpring();
+          launchTimer = pad.duration;
           activeLaunchVector.set(pad.force.x, pad.force.y, pad.force.z);
-          
           vy = activeLaunchVector.y;
           finalMx = activeLaunchVector.x * dt;
           finalMz = activeLaunchVector.z * dt;
@@ -392,6 +395,7 @@ async function main(){
           break;
         }
       }
+      wasOnLaunchPad = onPadThisFrame;
     }
 
     const desiredMove = {x: finalMx, y: vy * dt, z: finalMz};
@@ -412,7 +416,7 @@ async function main(){
     world.step();
 
     player.position.set(pos.x + corrected.x, (pos.y + corrected.y) - PH / 2, pos.z + corrected.z);
-    
+
     if((hasInput || (running && !hasInput)) && launchTimer <= 0) {
       player.rotation.y = Math.atan2(mx, -mz);
     } else if (launchTimer > 0) {
@@ -433,11 +437,11 @@ async function main(){
     }
 
     lookAt.set(player.position.x, player.position.y + 1.2, player.position.z);
-    
+
     const idealX = player.position.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
     const idealY = player.position.y + 1.2 + Math.sin(camPitch) * 7.5;
     const idealZ = player.position.z + Math.cos(camYaw) * Math.cos(camPitch) * 7.5;
-    
+
     const rightX = Math.cos(camYaw) * 1.4; const rightZ = -Math.sin(camYaw) * 1.4;
     const finalCamX = idealX + rightX; const finalCamZ = idealZ + rightZ;
     const finalLookAt = new THREE.Vector3(lookAt.x + rightX, lookAt.y, lookAt.z + rightZ);
@@ -445,10 +449,8 @@ async function main(){
     if (frameCount % 3 === 0 || firstFrame) {
       rayDir.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
       const maxDist = rayDir.length(); rayDir.normalize();
-      
       const ray = new R.Ray(finalLookAt, rayDir);
       const hit = world.castRay(ray, maxDist, true, null, null, pCollider);
-
       if (hit) {
         const safeDist = Math.max(0.4, hit.toi - 0.15);
         camPos.set(finalLookAt.x + rayDir.x * safeDist, finalLookAt.y + rayDir.y * safeDist, finalLookAt.z + rayDir.z * safeDist);
@@ -457,10 +459,10 @@ async function main(){
       }
     }
 
-    if(firstFrame){ 
-      camera.position.copy(camPos); firstFrame = false; 
-    } else { 
-      camera.position.lerp(camPos, 0.14); 
+    if(firstFrame){
+      camera.position.copy(camPos); firstFrame = false;
+    } else {
+      camera.position.lerp(camPos, 0.14);
     }
 
     camera.lookAt(finalLookAt);
@@ -474,22 +476,20 @@ async function main(){
       const targetPos = remotePlayers[id].position.clone().add(new THREE.Vector3(0, 1.0, 0));
       const toTarget = targetPos.clone().sub(checkOrigin);
       const projection = toTarget.dot(checkDir);
-      if (projection < 0) continue; 
-
+      if (projection < 0) continue;
       const closestPointOnRay = checkOrigin.clone().add(checkDir.clone().multiplyScalar(projection));
-      
-      if (targetPos.distanceTo(closestPointOnRay) < 1.8 && checkOrigin.distanceTo(targetPos) < 120) { 
+      if (targetPos.distanceTo(closestPointOnRay) < 1.8 && checkOrigin.distanceTo(targetPos) < 120) {
         targetInSight = true;
-        break; 
+        break;
       }
     }
 
     if (crosshairEl) {
       if (targetInSight) {
-        crosshairEl.style.borderColor = '#ff355e'; 
-        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.3)'; 
+        crosshairEl.style.borderColor = '#ff355e';
+        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.3)';
       } else {
-        crosshairEl.style.borderColor = '#ffffff'; 
+        crosshairEl.style.borderColor = '#ffffff';
         crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.0)';
       }
     }
@@ -501,8 +501,8 @@ async function main(){
     renderer.setScissorTest(true);
     renderer.render(scene, camera);
 
-    const mapSize = Math.min(innerWidth, innerHeight) * 0.25; 
-    const mapX = innerWidth - mapSize - 20; const mapY = innerHeight - mapSize - 20;                  
+    const mapSize = Math.min(innerWidth, innerHeight) * 0.25;
+    const mapX = innerWidth - mapSize - 20; const mapY = innerHeight - mapSize - 20;
 
     minimapCamera.position.set(player.position.x, 200, player.position.z);
     minimapCamera.lookAt(player.position.x, player.position.y, player.position.z);
@@ -510,9 +510,9 @@ async function main(){
     renderer.setViewport(mapX, mapY, mapSize, mapSize);
     renderer.setScissor(mapX, mapY, mapSize, mapSize);
     renderer.setScissorTest(true);
-    
+
     renderer.setClearColor(0xeef2f7); renderer.clearDepth(); renderer.render(scene, minimapCamera);
-    renderer.setClearColor(0xffffff); 
+    renderer.setClearColor(0xffffff);
   }
   frame();
 }
