@@ -503,25 +503,4 @@ async function main(){
 
     for (const id in remotePlayers) {
       if (targetStates[id]) {
-        remotePlayers[id].position.x += (targetStates[id].x - remotePlayers[id].position.x) * 0.20;
-        remotePlayers[id].position.y += (targetStates[id].y - remotePlayers[id].position.y) * 0.20;
-        remotePlayers[id].position.z += (targetStates[id].z - remotePlayers[id].position.z) * 0.20;
-        remotePlayers[id].rotation.y += (targetStates[id].rotY - remotePlayers[id].rotation.y) * 0.20;
-      }
-    }
-
-    lookAt.set(player.position.x, player.position.y + 1.2, player.position.z);
-
-    const idealX = player.position.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
-    const idealY = player.position.y + 1.2 + Math.sin(camPitch) * 7.5;
-    const idealZ = player.position.z + Math.cos(camYaw) * Math.cos(camPitch) * 7.5;
-
-    const rightX = Math.cos(camYaw) * 1.4; const rightZ = -Math.sin(camYaw) * 1.4;
-    const finalCamX = idealX + rightX; const finalCamZ = idealZ + rightZ;
-    const finalLookAt = new THREE.Vector3(lookAt.x + rightX, lookAt.y, lookAt.z + rightZ);
-
-    if (frameCount % 3 === 0 || firstFrame) {
-      rayDirVector.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
-      const maxDist = rayDirVector.length(); rayDirVector.normalize();
-      const ray = new R.Ray(finalLookAt, rayDirVector);
-      const hit = world.castRay(ray, maxDist
+        remotePlayers[id].position.x += (targetStates[id].
