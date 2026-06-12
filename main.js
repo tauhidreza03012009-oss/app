@@ -8,12 +8,17 @@ let laserBuffer = null;
 
 async function initAudio() {
   if (audioCtx) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const res = await fetch('./laser.mp3');
-  const arrBuf = await res.arrayBuffer();
-  laserBuffer = await audioCtx.decodeAudioData(arrBuf);
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const res = await fetch('./laser.mp3');
+    alert('Fetch status: ' + res.status + ' ok: ' + res.ok);
+    const arrBuf = await res.arrayBuffer();
+    laserBuffer = await audioCtx.decodeAudioData(arrBuf);
+    alert('Audio ready!');
+  } catch(e) {
+    alert('Audio failed: ' + e.message);
+  }
 }
-
 function playLaser() {
   if (!audioCtx || !laserBuffer) return;
   const source = audioCtx.createBufferSource();
