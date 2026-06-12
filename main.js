@@ -10,6 +10,7 @@ let springBuffer = null;
 let walkBuffer = null;
 let walkSource = null; // Tracks the active loop instance so it can be stopped
 
+// Refactored to handle preloading upfront
 async function initAudio() {
   if (audioCtx) return;
   try {
@@ -26,12 +27,17 @@ async function initAudio() {
       springRes.arrayBuffer(),
       walkRes.arrayBuffer()
     ]);
-    audioCtx.decodeAudioData(laserArr, b => { laserBuffer = b; }, e => { alert('Laser decode error: ' + e); });
-    audioCtx.decodeAudioData(jumpArr, b => { jumpBuffer = b; }, e => { alert('Jump decode error: ' + e); });
-    audioCtx.decodeAudioData(springArr, b => { springBuffer = b; }, e => { alert('Spring decode error: ' + e); });
-    audioCtx.decodeAudioData(walkArr, b => { walkBuffer = b; }, e => { alert('Walk decode error: ' + e); });
+    
+    // We use Promises to ensure all decoding is complete before moving forward
+    await Promise.all([
+      new Promise((resolve, reject) => { audioCtx.decodeAudioData(laserArr, b => { laserBuffer = b; resolve(); }, reject); }),
+      new Promise((resolve, reject) => { audioCtx.decodeAudioData(jumpArr, b => { jumpBuffer = b; resolve(); }, reject); }),
+      new Promise((resolve, reject) => { audioCtx.decodeAudioData(springArr, b => { springBuffer = b; resolve(); }, reject); }),
+      new Promise((resolve, reject) => { audioCtx.decodeAudioData(walkArr, b => { walkBuffer = b; resolve(); }, reject); })
+    ]);
   } catch(e) {
-    alert('Audio failed: ' + e.message);
+    console.error('Audio preloading failed: ' + e.message);
+    alert('Audio failed to load. The game will start, but sounds may not play.');
   }
 }
 
@@ -77,8 +83,9 @@ function stopWalk() {
   }
 }
 
-window.addEventListener('touchstart', initAudio, { once: true });
-window.addEventListener('mousedown', initAudio, { once: true });
+// Keep these triggers just in case the AudioContext starts in a suspended state due to browser autoplay policies
+window.addEventListener('touchstart', () => { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
+window.addEventListener('mousedown', () => { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
 
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
 const socket = io();
@@ -201,7 +208,14 @@ window.addEventListener('keyup', e => K[e.code] = false);
 // ── MAIN INITIALIZATION ───────────────────────────────────────────────────────
 async function main(){
   const R = await import('https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.12.0/rapier.es.js');
-  await R.init();
+  
+  // Wait for physics engine initialization AND all audio tracking data to resolve
+  await Promise.all([
+    R.init(),
+    initAudio()
+  ]);
+
+  // Hide loading screen only after physics engine AND audio files are fully decoded
   document.getElementById('loading').style.display = 'none';
 
   const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('c'), antialias: true});
@@ -317,10 +331,28 @@ async function main(){
     const targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
     const tracerStart = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
 
-    const lineGeo = new THREE.BufferGeometry().setFromPoints([tracerStart, targetPointInSpace]);
-    const tracer = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({color: 0xff355e, linewidth: 7}));
-    tracer.frustumCulled = false; scene.add(tracer);
-    setTimeout(() => scene.remove(tracer), 60);
+    // --- UPGRADED GLOWING CYLINDER LASER VISUAL ---
+    const distance = tracerStart.distanceTo(targetPointInSpace);
+    
+    const laserGeo = new THREE.CylinderGeometry(0.15, 0.15, distance, 8); 
+    laserGeo.translate(0, distance / 2, 0);
+
+    const laserMat = new THREE.MeshStandardMaterial({
+      color: 0xff355e,
+      emissive: 0xff355e,
+      emissiveIntensity: 8,
+      transparent: true,
+      opacity: 0.9
+    });
+
+    const tracer = new THREE.Mesh(laserGeo, laserMat);
+    tracer.position.copy(tracerStart);
+    tracer.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), rayDir);
+    tracer.frustumCulled = false; 
+    
+    scene.add(tracer);
+    
+    setTimeout(() => scene.remove(tracer), 120);
 
     let closestTarget = null; let closestDist = maxRange;
 
@@ -331,8 +363,8 @@ async function main(){
       if (projection < 0) continue;
       const closestPointOnRay = rayOrigin.clone().add(rayDir.clone().multiplyScalar(projection));
       if (targetPos.distanceTo(closestPointOnRay) < 1.8) {
-        const distance = rayOrigin.distanceTo(targetPos);
-        if (distance < closestDist) { closestDist = distance; closestTarget = id; }
+        const distToTarget = rayOrigin.distanceTo(targetPos);
+        if (distToTarget < closestDist) { closestDist = distToTarget; closestTarget = id; }
       }
     }
     if (closestTarget) socket.emit('shoot', closestTarget);
@@ -358,7 +390,7 @@ async function main(){
   const clock = new THREE.Clock();
   const camPos = new THREE.Vector3();
   const lookAt = new THREE.Vector3();
-  const rayDir = new THREE.Vector3();
+  const rayDirVector = new THREE.Vector3();
   let firstFrame = true;
   let frameCount = 0;
   let wasOnLaunchPad = false;
@@ -430,7 +462,6 @@ async function main(){
     }
 
     // ── WALKING AUDIO LOGIC ──────────────────────────────────────────────────
-    // Audio plays if there is movement input (or auto-run) AND the player is touching the ground flatly
     const isMovingOnGround = (hasInput || (running && !hasInput)) && vy === 0 && launchTimer <= 0;
     if (isMovingOnGround) {
       startWalk();
@@ -480,13 +511,13 @@ async function main(){
     const finalLookAt = new THREE.Vector3(lookAt.x + rightX, lookAt.y, lookAt.z + rightZ);
 
     if (frameCount % 3 === 0 || firstFrame) {
-      rayDir.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
-      const maxDist = rayDir.length(); rayDir.normalize();
-      const ray = new R.Ray(finalLookAt, rayDir);
+      rayDirVector.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
+      const maxDist = rayDirVector.length(); rayDirVector.normalize();
+      const ray = new R.Ray(finalLookAt, rayDirVector);
       const hit = world.castRay(ray, maxDist, true, null, null, pCollider);
       if (hit) {
         const safeDist = Math.max(0.4, hit.toi - 0.15);
-        camPos.set(finalLookAt.x + rayDir.x * safeDist, finalLookAt.y + rayDir.y * safeDist, finalLookAt.z + rayDir.z * safeDist);
+        camPos.set(finalLookAt.x + rayDirVector.x * safeDist, finalLookAt.y + rayDirVector.y * safeDist, finalLookAt.z + rayDirVector.z * safeDist);
       } else {
         camPos.set(finalCamX, idealY, finalCamZ);
       }
