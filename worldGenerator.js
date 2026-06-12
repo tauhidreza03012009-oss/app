@@ -105,7 +105,7 @@ function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
   // Shop interior floors are red
   createRigidMesh(scene, world, R, x, 0.1, z, w, 0.2, d, redFloorMat);
   
-  createRigidMesh(scene, world, R, x, 0.1, z-w/2+wallThick+1.5, 3,3, 3, redFloorMat)
+  createRigidMesh(scene, world, R, x, 0.1, z-w/2+wallThick+3, 3,3, 3, redFloorMat)
   
   createRigidMesh(scene, world, R, x, h + 0.1, z, w + 0.6, 0.2, d + 0.6, roofMat);
   createRigidMesh(scene, world, R, x, h / 2, z - d / 2 + wallThick / 2, w, h, wallThick, stoneMat); 
