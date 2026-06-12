@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { buildMapLayout } from './worldGenerator.js';
 import { activeLaunchPads } from './worldGenerator.js';
 
-const backgroundSound = new Audio('laser.mp3');
+const backgroundSound = new Audio('./laser.mp3');
 let audioUnlocked = false;
 
 function unlockAudio() {
