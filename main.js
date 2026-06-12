@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { buildMapLayout } from './worldGenerator.js';
 import { activeLaunchPads } from './worldGenerator.js';
-
+const backgroundSound = new Audio('laser.mp3');
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
 const socket = io();
 let myNetworkId = null;
@@ -231,6 +231,9 @@ async function main(){
   const crosshairVector = new THREE.Vector2(0, 0.2); 
 
   function fireWeapon() {
+    backgroundSound.play().catch(error => {
+        console.log("Playback prevented until user interaction occurs.");
+    });
     raycaster.setFromCamera(crosshairVector, camera);
     const rayDir = raycaster.ray.direction.clone().normalize();
     const rayOrigin = raycaster.ray.origin.clone();
