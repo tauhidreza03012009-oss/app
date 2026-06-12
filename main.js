@@ -337,8 +337,7 @@ async function main(){
     // Create a cylinder along the default Y axis
     const laserGeo = new THREE.CylinderGeometry(0.12, 0.12, distance, 8); 
     
-    // CRITICAL FIX: Rotate the geometry itself onto the Z-axis (forward) inside its local space first.
-    // This allows Three.js's lookAt() method to aim it properly like a beam.
+    // Rotate geometry onto the Z-axis
     laserGeo.rotateX(Math.PI / 2);
 
     const laserMat = new THREE.MeshStandardMaterial({
@@ -351,11 +350,11 @@ async function main(){
 
     const tracer = new THREE.Mesh(laserGeo, laserMat);
     
-    // Position the cylinder's absolute center perfectly halfway between the player and the target
+    // Position halfway between the player and target
     const midPoint = new THREE.Vector3().lerpVectors(tracerStart, targetPointInSpace, 0.5);
     tracer.position.copy(midPoint);
     
-    // Orient the cylinder to point flawlessly at the targeted point in space
+    // Orient lookAt perfectly
     tracer.lookAt(targetPointInSpace);
     
     tracer.frustumCulled = false; 
@@ -503,4 +502,95 @@ async function main(){
 
     for (const id in remotePlayers) {
       if (targetStates[id]) {
-        remotePlayers[id].position.x += (targetStates[id].
+        remotePlayers[id].position.x += (targetStates[id].x - remotePlayers[id].position.x) * 0.20;
+        remotePlayers[id].position.y += (targetStates[id].y - remotePlayers[id].position.y) * 0.20;
+        remotePlayers[id].position.z += (targetStates[id].z - remotePlayers[id].position.z) * 0.20;
+        remotePlayers[id].rotation.y += (targetStates[id].rotY - remotePlayers[id].rotation.y) * 0.20;
+      }
+    }
+
+    lookAt.set(player.position.x, player.position.y + 1.2, player.position.z);
+
+    const idealX = player.position.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
+    const idealY = player.position.y + 1.2 + Math.sin(camPitch) * 7.5;
+    const idealZ = player.position.z + Math.cos(camYaw) * Math.cos(camPitch) * 7.5;
+
+    const rightX = Math.cos(camYaw) * 1.4; const rightZ = -Math.sin(camYaw) * 1.4;
+    const finalCamX = idealX + rightX; const finalCamZ = idealZ + rightZ;
+    const finalLookAt = new THREE.Vector3(lookAt.x + rightX, lookAt.y, lookAt.z + rightZ);
+
+    if (frameCount % 3 === 0 || firstFrame) {
+      rayDirVector.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
+      const maxDist = rayDirVector.length(); rayDirVector.normalize();
+      const ray = new R.Ray(finalLookAt, rayDirVector);
+      const hit = world.castRay(ray, maxDist, true, null, null, pCollider);
+      if (hit) {
+        const safeDist = Math.max(0.4, hit.toi - 0.15);
+        camPos.set(finalLookAt.x + rayDirVector.x * safeDist, finalLookAt.y + rayDirVector.y * safeDist, finalLookAt.z + rayDirVector.z * safeDist);
+      } else {
+        camPos.set(finalCamX, idealY, finalCamZ);
+      }
+    }
+
+    if(firstFrame){
+      camera.position.copy(camPos); firstFrame = false;
+    } else {
+      camera.position.lerp(camPos, 0.14);
+    }
+
+    camera.lookAt(finalLookAt);
+
+    let targetInSight = false;
+    raycaster.setFromCamera(crosshairVector, camera);
+    const checkDir = raycaster.ray.direction.clone().normalize();
+    const checkOrigin = raycaster.ray.origin.clone();
+
+    for (const id in remotePlayers) {
+      const targetPos = remotePlayers[id].position.clone().add(new THREE.Vector3(0, 1.0, 0));
+      const toTarget = targetPos.clone().sub(checkOrigin);
+      const projection = toTarget.dot(checkDir);
+      if (projection < 0) continue;
+      const closestPointOnRay = checkOrigin.clone().add(checkDir.clone().multiplyScalar(projection));
+      if (targetPos.distanceTo(closestPointOnRay) < 1.8 && checkOrigin.distanceTo(targetPos) < 120) {
+        targetInSight = true;
+        break;
+      }
+    }
+
+    if (crosshairEl) {
+      if (targetInSight) {
+        crosshairEl.style.borderColor = '#ff355e';
+        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.3)';
+      } else {
+        crosshairEl.style.borderColor = '#ffffff';
+        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.0)';
+      }
+    }
+
+    ring.rotation.z = elapsed * 2;
+
+    renderer.setViewport(0, 0, innerWidth, innerHeight);
+    renderer.setScissor(0, 0, innerWidth, innerHeight);
+    renderer.setScissorTest(true);
+    renderer.render(scene, camera);
+
+    const mapSize = Math.min(innerWidth, innerHeight) * 0.25;
+    const mapX = innerWidth - mapSize - 20; const mapY = innerHeight - mapSize - 20;
+
+    minimapCamera.position.set(player.position.x, 200, player.position.z);
+    minimapCamera.lookAt(player.position.x, player.position.y, player.position.z);
+
+    renderer.setViewport(mapX, mapY, mapSize, mapSize);
+    renderer.setScissor(mapX, mapY, mapSize, mapSize);
+    renderer.setScissorTest(true);
+
+    renderer.setClearColor(0xeef2f7); renderer.clearDepth(); renderer.render(scene, minimapCamera);
+    renderer.setClearColor(0xffffff);
+  }
+  frame();
+}
+
+main().catch(e => {
+  document.getElementById('loading').textContent = 'ERROR: ' + e.message;
+  console.error(e);
+});
