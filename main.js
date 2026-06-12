@@ -5,30 +5,43 @@ import { activeLaunchPads } from './worldGenerator.js';
 // ── AUDIO SETUP ───────────────────────────────────────────────────────────────
 let audioCtx = null;
 let laserBuffer = null;
+let jumpBuffer = null;
 
 async function initAudio() {
   if (audioCtx) return;
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const res = await fetch('./laser.mp3');
-    const arrBuf = await res.arrayBuffer();
-    audioCtx.decodeAudioData(arrBuf, 
-      (buffer) => {
-        laserBuffer = buffer;
-        alert('Audio ready!');
-      },
-      (err) => {
-        alert('Decode error: ' + err);
-      }
-    );
+
+    const [laserRes, jumpRes] = await Promise.all([
+      fetch('./laser.mp3'),
+      fetch('./jump.mp3')
+    ]);
+
+    const [laserArr, jumpArr] = await Promise.all([
+      laserRes.arrayBuffer(),
+      jumpRes.arrayBuffer()
+    ]);
+
+    audioCtx.decodeAudioData(laserArr, b => { laserBuffer = b; }, e => { alert('Laser decode error: ' + e); });
+    audioCtx.decodeAudioData(jumpArr, b => { jumpBuffer = b; }, e => { alert('Jump decode error: ' + e); });
+
   } catch(e) {
     alert('Audio failed: ' + e.message);
   }
 }
+
 function playLaser() {
   if (!audioCtx || !laserBuffer) return;
   const source = audioCtx.createBufferSource();
   source.buffer = laserBuffer;
+  source.connect(audioCtx.destination);
+  source.start(0);
+}
+
+function playJump() {
+  if (!audioCtx || !jumpBuffer) return;
+  const source = audioCtx.createBufferSource();
+  source.buffer = jumpBuffer;
   source.connect(audioCtx.destination);
   source.start(0);
 }
@@ -94,7 +107,7 @@ jstEl.addEventListener('touchcancel', e => {
 // ── JUMP BUTTON ───────────────────────────────────────────────────────────────
 document.getElementById('jmp').addEventListener('touchstart', e => {
   e.preventDefault();
-  if(vy === 0 && launchTimer <= 0) vy = 11;
+  if(vy === 0 && launchTimer <= 0){ vy = 11; playJump(); }
 }, {passive: false});
 
 // ── RUN BUTTON ────────────────────────────────────────────────────────────────
@@ -145,7 +158,7 @@ window.addEventListener('mousemove', e => {
 const K={};
 window.addEventListener('keydown', e => {
   K[e.code] = true;
-  if(e.code === 'Space' && vy === 0 && launchTimer <= 0){ e.preventDefault(); vy = 11; }
+  if(e.code === 'Space' && vy === 0 && launchTimer <= 0){ e.preventDefault(); vy = 11; playJump(); }
   if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') toggleRun();
   if(running && (e.code==='KeyW' || e.code==='KeyA' || e.code==='KeyS' || e.code==='KeyD' ||
      e.code==='ArrowUp' || e.code==='ArrowDown' || e.code==='ArrowLeft' || e.code==='ArrowRight')) {
