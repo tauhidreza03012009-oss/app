@@ -68,6 +68,9 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
       createRigidMesh(buildingGroup, world, R, x, yBase + 0.1, z, w, 0.2, d, redFloorMat);
     } else {
       createRigidMesh(buildingGroup, world, R, x - rampW / 2, yBase + 0.1, z, w - rampW, 0.2, d, redFloorMat);
+      createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z-d/8, rampW, 0.2, d/4, redFloorMat);
+      createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z+d/8, rampW, 0.2, d/4, redFloorMat);
+      
     }
 
     // Walls
@@ -92,7 +95,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
 
     // Ramps
     if (i < floors - 1) {
-      const rampRun = d - 2.0; 
+      const rampRun = d/2; 
       const rampLength = Math.sqrt(rampRun * rampRun + floorH * floorH);
       const rampAngle = Math.atan2(floorH, rampRun); 
       createRigidMesh(buildingGroup, world, R, x + w / 2 - WALL_THICKNESS - rampW / 2, yBase + floorH / 2, z, rampW, 0.15, rampLength, woodMat, rampAngle, 0, 0);
