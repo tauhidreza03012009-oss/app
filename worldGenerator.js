@@ -60,7 +60,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
   buildingGroup.position.set(0, 0, 0); // Position is handled by individual meshes for physics alignment
   const rampW = 4.0;     
 
-  for (let i = 0; i < floors; i++) {
+  for (let i = 0; i < floors+1; i++) {
     const yBase = i * floorH;
     
     // Floors
@@ -72,7 +72,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
       createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z+3*d/8, rampW, 0.2, d/4, redFloorMat);
       
     }
-
+if(i!=floors){
     // Walls
     createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z - d / 2 + WALL_THICKNESS / 2, w, floorH, WALL_THICKNESS, stoneMat); 
     createRigidMesh(buildingGroup, world, R, x - w / 2 + WALL_THICKNESS / 2, yBase + floorH / 2, z, WALL_THICKNESS, floorH, d - WALL_THICKNESS * 2, stoneMat); 
@@ -91,7 +91,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
     if (i > 0) {
       createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + 0.6, z + d / 2 - WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
       createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + 0.6, z + d / 2 - WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
-    } 
+    } }
 
     // Ramps
     if (i < floors - 1) {
@@ -101,8 +101,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
       createRigidMesh(buildingGroup, world, R, x + w / 2 - WALL_THICKNESS - rampW / 2, yBase + floorH / 2, z, rampW, 0.15, rampLength, woodMat, rampAngle, 0, 0);
     }
   }
-  
-  createRigidMesh(buildingGroup, world, R, x, floors * floorH + 0.1, z, w + 0.8, 0.2, d + 0.8, roofMat);
+
   scene.add(buildingGroup);
 }
 
