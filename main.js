@@ -2,20 +2,28 @@ import * as THREE from 'three';
 import { buildMapLayout } from './worldGenerator.js';
 import { activeLaunchPads } from './worldGenerator.js';
 
-const backgroundSound = new Audio('./laser.mp3');
-let audioUnlocked = false;
+// ── AUDIO SETUP ───────────────────────────────────────────────────────────────
+let audioCtx = null;
+let laserBuffer = null;
 
-function unlockAudio() {
-  if (audioUnlocked) return;
-  backgroundSound.play().then(() => {
-    backgroundSound.pause();
-    backgroundSound.currentTime = 0;
-    audioUnlocked = true;
-  }).catch(() => {});
+async function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const res = await fetch('./laser.mp3');
+  const arrBuf = await res.arrayBuffer();
+  laserBuffer = await audioCtx.decodeAudioData(arrBuf);
 }
 
-window.addEventListener('touchstart', unlockAudio, { once: true });
-window.addEventListener('mousedown', unlockAudio, { once: true });
+function playLaser() {
+  if (!audioCtx || !laserBuffer) return;
+  const source = audioCtx.createBufferSource();
+  source.buffer = laserBuffer;
+  source.connect(audioCtx.destination);
+  source.start(0);
+}
+
+window.addEventListener('touchstart', initAudio, { once: true });
+window.addEventListener('mousedown', initAudio, { once: true });
 
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
 const socket = io();
@@ -246,8 +254,7 @@ async function main(){
   const crosshairVector = new THREE.Vector2(0, 0.2); 
 
   function fireWeapon() {
-    backgroundSound.currentTime = 0;
-    backgroundSound.play().catch(() => {});
+    playLaser();
 
     raycaster.setFromCamera(crosshairVector, camera);
     const rayDir = raycaster.ray.direction.clone().normalize();
