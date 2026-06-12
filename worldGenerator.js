@@ -214,8 +214,8 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   const nwGrass = new THREE.Mesh(new THREE.PlaneGeometry(plotSize, plotSize), grassMat); 
   nwGrass.rotation.x = -PI_HALF; nwGrass.position.set(-plotOffset, 0.03, plotOffset); scene.add(nwGrass);
   
-  buildExplorableApartment(scene, world, R, -120, 160, 30, 6.0, 30, 5); 
-  buildExplorableApartment(scene, world, R, -150, 160, 30, 6.0, 30, 5); 
+  buildExplorableApartment(scene, world, R, -120, 160, 30, 7.0, 30, 5); 
+  buildExplorableApartment(scene, world, R, -150, 160, 30, 7.0, 30, 5); 
   
   createRigidMesh(scene, world, R, -90, 4.5, 90, 12, 9, 14, woodMat, 0, PI_HALF, 0);
   createRigidMesh(scene, world, R, -90, 4.5, 120, 12, 9, 14, woodMat, 0, PI_HALF, 0);
