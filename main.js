@@ -1,7 +1,22 @@
 import * as THREE from 'three';
 import { buildMapLayout } from './worldGenerator.js';
 import { activeLaunchPads } from './worldGenerator.js';
+
 const backgroundSound = new Audio('laser.mp3');
+let audioUnlocked = false;
+
+function unlockAudio() {
+  if (audioUnlocked) return;
+  backgroundSound.play().then(() => {
+    backgroundSound.pause();
+    backgroundSound.currentTime = 0;
+    audioUnlocked = true;
+  }).catch(() => {});
+}
+
+window.addEventListener('touchstart', unlockAudio, { once: true });
+window.addEventListener('mousedown', unlockAudio, { once: true });
+
 // ── MULTIPLAYER NETWORKING SETUP ──────────────────────────────────────────────
 const socket = io();
 let myNetworkId = null;
@@ -231,9 +246,9 @@ async function main(){
   const crosshairVector = new THREE.Vector2(0, 0.2); 
 
   function fireWeapon() {
-    backgroundSound.play().catch(error => {
-        console.log("Playback prevented until user interaction occurs.");
-    });
+    backgroundSound.currentTime = 0;
+    backgroundSound.play().catch(() => {});
+
     raycaster.setFromCamera(crosshairVector, camera);
     const rayDir = raycaster.ray.direction.clone().normalize();
     const rayOrigin = raycaster.ray.origin.clone();
