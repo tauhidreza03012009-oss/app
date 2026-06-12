@@ -94,7 +94,7 @@ if(i!=floors){
     } }
 
     // Ramps
-    if (i < floors - 1) {
+    if (i < floors ) {
       const rampRun = d/2; 
       const rampLength = Math.sqrt(rampRun * rampRun + floorH * floorH);
       const rampAngle = Math.atan2(floorH, rampRun); 
