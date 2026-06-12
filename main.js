@@ -138,7 +138,7 @@ jstEl.addEventListener('touchcancel', e => {
 // ── JUMP BUTTON ───────────────────────────────────────────────────────────────
 document.getElementById('jmp').addEventListener('touchstart', e => {
   e.preventDefault();
-  if(vy === 0 && launchTimer <= 0){ vy = 11; playJump(); }
+  if(vy === 0 && launchTimer <= 0){ vy = 18; playJump(); }
 }, {passive: false});
 
 // ── RUN BUTTON ────────────────────────────────────────────────────────────────
