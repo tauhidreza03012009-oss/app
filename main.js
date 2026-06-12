@@ -319,7 +319,6 @@ async function main(){
   const crosshairVector = new THREE.Vector2(0, 0.2);
 
   function fireWeapon() {
-  function fireWeapon() {
     playLaser();
 
     raycaster.setFromCamera(crosshairVector, camera);
@@ -525,74 +524,4 @@ async function main(){
       rayDirVector.set(finalCamX - finalLookAt.x, idealY - finalLookAt.y, finalCamZ - finalLookAt.z);
       const maxDist = rayDirVector.length(); rayDirVector.normalize();
       const ray = new R.Ray(finalLookAt, rayDirVector);
-      const hit = world.castRay(ray, maxDist, true, null, null, pCollider);
-      if (hit) {
-        const safeDist = Math.max(0.4, hit.toi - 0.15);
-        camPos.set(finalLookAt.x + rayDirVector.x * safeDist, finalLookAt.y + rayDirVector.y * safeDist, finalLookAt.z + rayDirVector.z * safeDist);
-      } else {
-        camPos.set(finalCamX, idealY, finalCamZ);
-      }
-    }
-
-    if(firstFrame){
-      camera.position.copy(camPos); firstFrame = false;
-    } else {
-      camera.position.lerp(camPos, 0.14);
-    }
-
-    camera.lookAt(finalLookAt);
-
-    let targetInSight = false;
-    raycaster.setFromCamera(crosshairVector, camera);
-    const checkDir = raycaster.ray.direction.clone().normalize();
-    const checkOrigin = raycaster.ray.origin.clone();
-
-    for (const id in remotePlayers) {
-      const targetPos = remotePlayers[id].position.clone().add(new THREE.Vector3(0, 1.0, 0));
-      const toTarget = targetPos.clone().sub(checkOrigin);
-      const projection = toTarget.dot(checkDir);
-      if (projection < 0) continue;
-      const closestPointOnRay = checkOrigin.clone().add(checkDir.clone().multiplyScalar(projection));
-      if (targetPos.distanceTo(closestPointOnRay) < 1.8 && checkOrigin.distanceTo(targetPos) < 120) {
-        targetInSight = true;
-        break;
-      }
-    }
-
-    if (crosshairEl) {
-      if (targetInSight) {
-        crosshairEl.style.borderColor = '#ff355e';
-        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.3)';
-      } else {
-        crosshairEl.style.borderColor = '#ffffff';
-        crosshairEl.style.transform = 'translate(-50%, -50%) scale(1.0)';
-      }
-    }
-
-    ring.rotation.z = elapsed * 2;
-
-    renderer.setViewport(0, 0, innerWidth, innerHeight);
-    renderer.setScissor(0, 0, innerWidth, innerHeight);
-    renderer.setScissorTest(true);
-    renderer.render(scene, camera);
-
-    const mapSize = Math.min(innerWidth, innerHeight) * 0.25;
-    const mapX = innerWidth - mapSize - 20; const mapY = innerHeight - mapSize - 20;
-
-    minimapCamera.position.set(player.position.x, 200, player.position.z);
-    minimapCamera.lookAt(player.position.x, player.position.y, player.position.z);
-
-    renderer.setViewport(mapX, mapY, mapSize, mapSize);
-    renderer.setScissor(mapX, mapY, mapSize, mapSize);
-    renderer.setScissorTest(true);
-
-    renderer.setClearColor(0xeef2f7); renderer.clearDepth(); renderer.render(scene, minimapCamera);
-    renderer.setClearColor(0xffffff);
-  }
-  frame();
-}
-
-main().catch(e => {
-  document.getElementById('loading').textContent = 'ERROR: ' + e.message;
-  console.error(e);
-});
+      const hit = world.castRay(ray, maxDist
