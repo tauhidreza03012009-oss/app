@@ -58,7 +58,7 @@ export function buildJumper(scene, world, R, x, y, z, targetX, targetY, targetZ,
 function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
   const buildingGroup = new THREE.Group();
   buildingGroup.position.set(0, 0, 0); // Position is handled by individual meshes for physics alignment
-  const rampW = 4.0;     
+  const rampW = 8.0;     
 
   for (let i = 0; i < floors+1; i++) {
     const yBase = i * floorH;
