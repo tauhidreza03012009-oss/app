@@ -319,6 +319,7 @@ async function main(){
   const crosshairVector = new THREE.Vector2(0, 0.2);
 
   function fireWeapon() {
+  function fireWeapon() {
     playLaser();
 
     raycaster.setFromCamera(crosshairVector, camera);
@@ -331,28 +332,38 @@ async function main(){
     const targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
     const tracerStart = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
 
-    // --- UPGRADED GLOWING CYLINDER LASER VISUAL ---
+    // --- FIXED THICK, GLOWING LASER VISUAL ---
     const distance = tracerStart.distanceTo(targetPointInSpace);
     
-    const laserGeo = new THREE.CylinderGeometry(0.15, 0.15, distance, 8); 
-    laserGeo.translate(0, distance / 2, 0);
+    // Create a cylinder along the default Y axis
+    const laserGeo = new THREE.CylinderGeometry(0.12, 0.12, distance, 8); 
+    
+    // CRITICAL FIX: Rotate the geometry itself onto the Z-axis (forward) inside its local space first.
+    // This allows Three.js's lookAt() method to aim it properly like a beam.
+    laserGeo.rotateX(Math.PI / 2);
 
     const laserMat = new THREE.MeshStandardMaterial({
       color: 0xff355e,
       emissive: 0xff355e,
-      emissiveIntensity: 8,
+      emissiveIntensity: 6,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.85
     });
 
     const tracer = new THREE.Mesh(laserGeo, laserMat);
-    tracer.position.copy(tracerStart);
-    tracer.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), rayDir);
-    tracer.frustumCulled = false; 
     
+    // Position the cylinder's absolute center perfectly halfway between the player and the target
+    const midPoint = new THREE.Vector3().lerpVectors(tracerStart, targetPointInSpace, 0.5);
+    tracer.position.copy(midPoint);
+    
+    // Orient the cylinder to point flawlessly at the targeted point in space
+    tracer.lookAt(targetPointInSpace);
+    
+    tracer.frustumCulled = false; 
     scene.add(tracer);
     
-    setTimeout(() => scene.remove(tracer), 120);
+    setTimeout(() => scene.remove(tracer), 100);
+    // -----------------------------------------
 
     let closestTarget = null; let closestDist = maxRange;
 
