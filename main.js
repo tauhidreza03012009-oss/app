@@ -11,11 +11,12 @@ async function initAudio() {
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const res = await fetch('./laser.mp3');
+    console.log('Fetch status:', res.status, res.ok);
     const arrBuf = await res.arrayBuffer();
     laserBuffer = await audioCtx.decodeAudioData(arrBuf);
-    
+    console.log('Audio ready!');
   } catch(e) {
-    alert('Audio failed: ' + e.message);
+    console.error('Audio failed:', e);
   }
 }
 function playLaser() {
