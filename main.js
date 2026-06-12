@@ -7,24 +7,29 @@ let audioCtx = null;
 let laserBuffer = null;
 let jumpBuffer = null;
 let springBuffer = null;
+let walkBuffer = null;
+let walkSource = null; // Tracks the active loop instance so it can be stopped
 
 async function initAudio() {
   if (audioCtx) return;
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const [laserRes, jumpRes, springRes] = await Promise.all([
+    const [laserRes, jumpRes, springRes, walkRes] = await Promise.all([
       fetch('./laser.mp3'),
       fetch('./jump.mp3'),
-      fetch('./spring.mp3')
+      fetch('./spring.mp3'),
+      fetch('./walk.mp3')
     ]);
-    const [laserArr, jumpArr, springArr] = await Promise.all([
+    const [laserArr, jumpArr, springArr, walkArr] = await Promise.all([
       laserRes.arrayBuffer(),
       jumpRes.arrayBuffer(),
-      springRes.arrayBuffer()
+      springRes.arrayBuffer(),
+      walkRes.arrayBuffer()
     ]);
     audioCtx.decodeAudioData(laserArr, b => { laserBuffer = b; }, e => { alert('Laser decode error: ' + e); });
     audioCtx.decodeAudioData(jumpArr, b => { jumpBuffer = b; }, e => { alert('Jump decode error: ' + e); });
     audioCtx.decodeAudioData(springArr, b => { springBuffer = b; }, e => { alert('Spring decode error: ' + e); });
+    audioCtx.decodeAudioData(walkArr, b => { walkBuffer = b; }, e => { alert('Walk decode error: ' + e); });
   } catch(e) {
     alert('Audio failed: ' + e.message);
   }
@@ -44,6 +49,7 @@ function playJump() {
   source.buffer = jumpBuffer;
   source.connect(audioCtx.destination);
   source.start(0);
+  stopWalk(); // Cut off walking sound instantly when airborne
 }
 
 function playSpring() {
@@ -52,6 +58,23 @@ function playSpring() {
   source.buffer = springBuffer;
   source.connect(audioCtx.destination);
   source.start(0);
+  stopWalk(); // Cut off walking sound instantly when launched
+}
+
+function startWalk() {
+  if (!audioCtx || !walkBuffer || walkSource) return;
+  walkSource = audioCtx.createBufferSource();
+  walkSource.buffer = walkBuffer;
+  walkSource.loop = true; // Seamless looping while moving
+  walkSource.connect(audioCtx.destination);
+  walkSource.start(0);
+}
+
+function stopWalk() {
+  if (walkSource) {
+    try { walkSource.stop(); } catch(e) {}
+    walkSource = null;
+  }
 }
 
 window.addEventListener('touchstart', initAudio, { once: true });
@@ -405,6 +428,16 @@ async function main(){
     if(corrected.y >= 0 || Math.abs(corrected.y) < Math.abs(desiredMove.y) * 0.01) {
       if(vy < 0 && launchTimer <= 0) vy = 0;
     }
+
+    // ── WALKING AUDIO LOGIC ──────────────────────────────────────────────────
+    // Audio plays if there is movement input (or auto-run) AND the player is touching the ground flatly
+    const isMovingOnGround = (hasInput || (running && !hasInput)) && vy === 0 && launchTimer <= 0;
+    if (isMovingOnGround) {
+      startWalk();
+    } else {
+      stopWalk();
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const pos = pBody.translation();
     pBody.setNextKinematicTranslation({
