@@ -85,8 +85,8 @@ if(i!=floors){
     createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z - d / 2 +WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
 
     const windowW = w / 2 - pillarW;
-    createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + floorH - 0.6, z + d / 2 - WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
-    createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + floorH - 0.6, z + d / 2 - WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+    createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + floorH - 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+    createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + floorH - 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
 
     if (i > 0) {
       createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + 0.6, z + d / 2 - WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
