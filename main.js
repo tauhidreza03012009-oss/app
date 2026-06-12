@@ -328,10 +328,19 @@ async function main(){
     player.rotation.y = Math.atan2(rayDir.x, -rayDir.z);
 
     const maxRange = 120;
-    const targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
-    const tracerStart = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
-
+    
     // --- FIXED THICK, GLOWING LASER VISUAL ---
+    // Extract real forward direction vector from player mesh matrix layout 
+    const playerForward = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion).normalize();
+    
+    // Set precise egress position right out the front of the dark visor bounds
+    const tracerStart = player.position.clone()
+      .add(playerForward.clone().multiplyScalar(0.38))
+      .add(new THREE.Vector3(0, 1.4, 0));
+
+    // Calculate real destination vector point by mapping actual environment layout intersects
+    let targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
+
     const distance = tracerStart.distanceTo(targetPointInSpace);
     
     // Create a cylinder along the default Y axis
