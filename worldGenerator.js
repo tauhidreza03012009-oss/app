@@ -74,15 +74,15 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
     }
 if(i!=floors){
     // Walls
-    createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z - d / 2 + WALL_THICKNESS / 2, w, floorH, WALL_THICKNESS, stoneMat); 
+    createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z + d / 2 - WALL_THICKNESS / 2, w, floorH, WALL_THICKNESS, stoneMat); 
     createRigidMesh(buildingGroup, world, R, x - w / 2 + WALL_THICKNESS / 2, yBase + floorH / 2, z, WALL_THICKNESS, floorH, d - WALL_THICKNESS * 2, stoneMat); 
     createRigidMesh(buildingGroup, world, R, x + w / 2 - WALL_THICKNESS / 2, yBase + floorH / 2, z, WALL_THICKNESS, floorH, d - WALL_THICKNESS * 2, stoneMat); 
 
     // Pillars & Windows
     const pillarW = 2.5;
-    createRigidMesh(buildingGroup, world, R, x - w / 2 + pillarW / 2, yBase + floorH / 2, z + d / 2 - WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
-    createRigidMesh(buildingGroup, world, R, x + w / 2 - pillarW / 2, yBase + floorH / 2, z + d / 2 - WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
-    createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z + d / 2 - WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
+    createRigidMesh(buildingGroup, world, R, x - w / 2 + pillarW / 2, yBase + floorH / 2, z - d / 2 +WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
+    createRigidMesh(buildingGroup, world, R, x + w / 2 - pillarW / 2, yBase + floorH / 2, z - d / 2 +WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
+    createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z - d / 2 +WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
 
     const windowW = w / 2 - pillarW;
     createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + floorH - 0.6, z + d / 2 - WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
@@ -97,7 +97,7 @@ if(i!=floors){
     if (i < floors ) {
       const rampRun = d/2; 
       const rampLength = Math.sqrt(rampRun * rampRun + floorH * floorH);
-      const rampAngle = Math.atan2(floorH, rampRun); 
+      const rampAngle = -Math.atan2(floorH, rampRun); 
       createRigidMesh(buildingGroup, world, R, x + w / 2 - WALL_THICKNESS - rampW / 2, yBase + floorH / 2, z, rampW, 0.15, rampLength, woodMat, rampAngle, 0, 0);
     }
   }
