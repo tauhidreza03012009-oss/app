@@ -213,8 +213,8 @@ export function buildMapLayout(scene, world, R, MAP_SIZE) {
   const nePlaza = new THREE.Mesh(new THREE.PlaneGeometry(plotSize, plotSize), woodMat); 
   nePlaza.rotation.x = -Math.PI / 2; nePlaza.position.set(plotOffset, 0.03, plotOffset); scene.add(nePlaza);
   createRigidMesh(scene, world, R, 160, 10, 160, 50, 20, 36, roofMat); 
-  buildExplorableShop(scene, world, R, 90, 100, 20, 10, 20, woodMat); 
-  buildExplorableShop(scene, world, R, 90, 130, 20, 10, 20, borderMat);
+  buildExplorableShop(scene, world, R, 70, 80, 30, 20, 30, woodMat); 
+  buildExplorableShop(scene, world, R, 70, 110, 20, 10, 20, borderMat);
   buildExplorableShop(scene, world, R, 100, 160, 20, 10, 16, stoneMat);
   createRigidMesh(scene, world, R, 150, 25, 220, 30, 50, 30, stoneMat); 
   createRigidMesh(scene, world, R, 220, 25, 220, 30, 50, 30, stoneMat); 
