@@ -336,7 +336,7 @@ camera.matrix.extractBasis(camRight, camUp, camForward);
 camForward.negate(); // three.js camera looks down -Z
 
 const tracerStart = player.position.clone()
-  .add(camForward.multiplyScalar(2.0))
+  .add(camForward.multiplyScalar(4.0))
   .add(camRight.multiplyScalar(-0.3))
   .add(new THREE.Vector3(0, 1.4, 0));
 
