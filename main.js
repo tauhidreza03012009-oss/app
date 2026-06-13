@@ -460,11 +460,12 @@ async function main(){
 
     const mx = ix * Math.cos(camYaw) + iy * Math.sin(camYaw);
     const mz = -ix * Math.sin(camYaw) + iy * Math.cos(camYaw);
-    const speed = MOVE_SPEED * (running ? 1.8 : 1.0);
+    const BASE_SPEED = 18.0; 
+    const speed = BASE_SPEED * (running ? 1.8 : 1.0);
 
-    let finalMx = mx * speed;
-    let finalMz = mz * speed;
-
+    // Multiply by dt so speed scales perfectly with the device's frame rate
+    let finalMx = mx * speed * dt;
+    let finalMz = mz * speed * dt;
     if (launchTimer > 0) {
       launchTimer -= dt;
       controller.enableSnapToGround(false);
