@@ -57,54 +57,152 @@ export function buildJumper(scene, world, R, x, y, z, targetX, targetY, targetZ,
 
 function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
   const buildingGroup = new THREE.Group();
-  buildingGroup.position.set(0, 0, 0); // Position is handled by individual meshes for physics alignment
-  const rampW = 8.0;     
+  buildingGroup.position.set(0, 0, 0);
+  const rampW = 8.0;
 
-  for (let i = 0; i < floors+1; i++) {
+  for (let i = 0; i < floors + 1; i++) {
     const yBase = i * floorH;
-    
+
     // Floors
     if (i === 0) {
       createRigidMesh(buildingGroup, world, R, x, yBase + 0.1, z, w, 0.2, d, redFloorMat);
     } else {
       createRigidMesh(buildingGroup, world, R, x - rampW / 2, yBase + 0.1, z, w - rampW, 0.2, d, redFloorMat);
-      createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z-3*d/8, rampW, 0.2, d/4, redFloorMat);
-      createRigidMesh(buildingGroup, world, R, x - rampW / 2+w/2, yBase + 0.1, z+3*d/8, rampW, 0.2, d/4, redFloorMat);
-      
+      createRigidMesh(buildingGroup, world, R, x - rampW / 2 + w / 2, yBase + 0.1, z - 3 * d / 8, rampW, 0.2, d / 4, redFloorMat);
+      createRigidMesh(buildingGroup, world, R, x - rampW / 2 + w / 2, yBase + 0.1, z + 3 * d / 8, rampW, 0.2, d / 4, redFloorMat);
     }
-if(i!=floors){
-    // Walls
-    createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z + d / 2 - WALL_THICKNESS / 2, w, floorH, WALL_THICKNESS, stoneMat); 
-    createRigidMesh(buildingGroup, world, R, x - w / 2 + WALL_THICKNESS / 2, yBase + floorH / 2, z, WALL_THICKNESS, floorH, d - WALL_THICKNESS * 2, stoneMat); 
-    createRigidMesh(buildingGroup, world, R, x + w / 2 - WALL_THICKNESS / 2, yBase + floorH / 2, z, WALL_THICKNESS, floorH, d - WALL_THICKNESS * 2, stoneMat); 
 
-    // Pillars & Windows
-    const pillarW = 2.5;
-    createRigidMesh(buildingGroup, world, R, x - w / 2 + pillarW / 2, yBase + floorH / 2, z - d / 2 +WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
-    createRigidMesh(buildingGroup, world, R, x + w / 2 - pillarW / 2, yBase + floorH / 2, z - d / 2 +WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
-    createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z - d / 2 +WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
+    if (i != floors) {
+      // Walls
+      createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z + d / 2 - WALL_THICKNESS / 2, w, floorH, WALL_THICKNESS, stoneMat);
+      createRigidMesh(buildingGroup, world, R, x - w / 2 + WALL_THICKNESS / 2, yBase + floorH / 2, z, WALL_THICKNESS, floorH, d - WALL_THICKNESS * 2, stoneMat);
+      createRigidMesh(buildingGroup, world, R, x + w / 2 - WALL_THICKNESS / 2, yBase + floorH / 2, z, WALL_THICKNESS, floorH, d - WALL_THICKNESS * 2, stoneMat);
 
-    const windowW = w / 2 - pillarW;
-    createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + floorH - 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
-    createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + floorH - 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+      // Pillars & Windows
+      const pillarW = 2.5;
+      createRigidMesh(buildingGroup, world, R, x - w / 2 + pillarW / 2, yBase + floorH / 2, z - d / 2 + WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
+      createRigidMesh(buildingGroup, world, R, x + w / 2 - pillarW / 2, yBase + floorH / 2, z - d / 2 + WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
+      createRigidMesh(buildingGroup, world, R, x, yBase + floorH / 2, z - d / 2 + WALL_THICKNESS / 2, pillarW, floorH, WALL_THICKNESS, borderMat);
 
-    if (i > 0) {
-      createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
-      createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
-    } }
+      const windowW = w / 2 - pillarW;
+      createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + floorH - 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+      createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + floorH - 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+
+      if (i > 0) {
+        createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+        createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+      }
+    }
 
     // Ramps
-    if (i < floors ) {
-      const rampRun = d/2; 
+    if (i < floors) {
+      const rampRun = d / 2;
       const rampLength = Math.sqrt(rampRun * rampRun + floorH * floorH);
-      const rampAngle = -Math.atan2(floorH, rampRun); 
+      const rampAngle = -Math.atan2(floorH, rampRun);
       createRigidMesh(buildingGroup, world, R, x + w / 2 - WALL_THICKNESS - rampW / 2, yBase + floorH / 2, z, rampW, 0.15, rampLength, woodMat, rampAngle, 0, 0);
     }
+
+    // ── FURNITURE PER FLOOR ───────────────────────────────────────────────
+    const fy = yBase + 0.2; // furniture sits just above the floor
+
+    if (i === 0) {
+      // Ground floor: kitchen/lobby — counter, table, chairs
+      // Counter along back wall
+      createRigidMesh(buildingGroup, world, R, x - 4, fy + 0.5, z + d / 2 - 2.5, 8, 1.0, 1.5, woodMat);
+      // Counter top
+      createRigidMesh(buildingGroup, world, R, x - 4, fy + 1.05, z + d / 2 - 2.5, 8.2, 0.1, 1.7, stoneMat);
+
+      // Dining table center
+      createRigidMesh(buildingGroup, world, R, x + 3, fy + 0.4, z, 3.5, 0.1, 2.0, woodMat);
+      // Table legs
+      createRigidMesh(buildingGroup, world, R, x + 1.6, fy + 0.2, z - 0.7, 0.2, 0.4, 0.2, woodMat);
+      createRigidMesh(buildingGroup, world, R, x + 4.4, fy + 0.2, z - 0.7, 0.2, 0.4, 0.2, woodMat);
+      createRigidMesh(buildingGroup, world, R, x + 1.6, fy + 0.2, z + 0.7, 0.2, 0.4, 0.2, woodMat);
+      createRigidMesh(buildingGroup, world, R, x + 4.4, fy + 0.2, z + 0.7, 0.2, 0.4, 0.2, woodMat);
+
+      // Chairs around table
+      createRigidMesh(buildingGroup, world, R, x + 3, fy + 0.25, z - 1.6, 1.0, 0.1, 1.0, woodMat); // seat
+      createRigidMesh(buildingGroup, world, R, x + 3, fy + 0.7,  z - 2.0, 1.0, 0.9, 0.1, woodMat); // back
+      createRigidMesh(buildingGroup, world, R, x + 3, fy + 0.25, z + 1.6, 1.0, 0.1, 1.0, woodMat);
+      createRigidMesh(buildingGroup, world, R, x + 3, fy + 0.7,  z + 2.0, 1.0, 0.9, 0.1, woodMat);
+
+      // Sofa (L-shape) in corner
+      createRigidMesh(buildingGroup, world, R, x - 8, fy + 0.35, z - 4, 4.0, 0.7, 1.4, crateMat); // seat
+      createRigidMesh(buildingGroup, world, R, x - 8, fy + 0.85, z - 4.6, 4.0, 0.3, 0.2, crateMat); // back
+
+    } else if (i % 3 === 1) {
+      // Bedroom floor: bed, nightstands, wardrobe
+      // Bed frame
+      createRigidMesh(buildingGroup, world, R, x - 4, fy + 0.3, z + 3, 4.5, 0.6, 7.0, woodMat);
+      // Mattress
+      createRigidMesh(buildingGroup, world, R, x - 4, fy + 0.65, z + 3, 4.2, 0.35, 6.6, crateMat);
+      // Pillow
+      createRigidMesh(buildingGroup, world, R, x - 4, fy + 0.85, z + 6, 3.5, 0.2, 1.2, stoneMat);
+      // Headboard
+      createRigidMesh(buildingGroup, world, R, x - 4, fy + 1.2, z + 6.6, 4.5, 1.0, 0.3, woodMat);
+
+      // Nightstands
+      createRigidMesh(buildingGroup, world, R, x - 1.5, fy + 0.4, z + 3, 1.0, 0.8, 1.0, woodMat);
+      createRigidMesh(buildingGroup, world, R, x - 6.5, fy + 0.4, z + 3, 1.0, 0.8, 1.0, woodMat);
+
+      // Wardrobe
+      createRigidMesh(buildingGroup, world, R, x + 5, fy + 1.5, z - 4, 3.5, 3.0, 1.2, woodMat);
+      // Wardrobe doors
+      createRigidMesh(buildingGroup, world, R, x + 3.5, fy + 1.5, z - 3.35, 1.5, 2.8, 0.08, borderMat);
+      createRigidMesh(buildingGroup, world, R, x + 6.5, fy + 1.5, z - 3.35, 1.5, 2.8, 0.08, borderMat);
+
+      // Desk + chair
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 0.4, z + 5, 3.0, 0.1, 1.2, woodMat); // desk top
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 0.2, z + 4.2, 1.0, 0.1, 1.0, woodMat); // chair seat
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 0.6, z + 3.8, 1.0, 0.7, 0.1, woodMat); // chair back
+
+    } else if (i % 3 === 2) {
+      // Living room floor: sofa set, coffee table, bookshelf, TV stand
+      // Sofa
+      createRigidMesh(buildingGroup, world, R, x, fy + 0.4, z + 4, 7.0, 0.8, 1.8, crateMat); // seat
+      createRigidMesh(buildingGroup, world, R, x, fy + 1.0, z + 4.8, 7.0, 0.4, 0.2, crateMat); // back
+      createRigidMesh(buildingGroup, world, R, x - 3.4, fy + 0.4, z + 3, 0.2, 0.8, 2.0, crateMat); // arm L
+      createRigidMesh(buildingGroup, world, R, x + 3.4, fy + 0.4, z + 3, 0.2, 0.8, 2.0, crateMat); // arm R
+
+      // Coffee table
+      createRigidMesh(buildingGroup, world, R, x, fy + 0.25, z + 1.5, 2.5, 0.08, 1.2, woodMat);
+      createRigidMesh(buildingGroup, world, R, x - 1.0, fy + 0.12, z + 1.5, 0.15, 0.25, 0.15, woodMat); // leg
+      createRigidMesh(buildingGroup, world, R, x + 1.0, fy + 0.12, z + 1.5, 0.15, 0.25, 0.15, woodMat);
+
+      // TV stand against back wall
+      createRigidMesh(buildingGroup, world, R, x - 4, fy + 0.3, z - d / 2 + 2.0, 5.0, 0.6, 1.0, woodMat);
+      // TV (thin slab)
+      createRigidMesh(buildingGroup, world, R, x - 4, fy + 1.3, z - d / 2 + 1.8, 4.0, 1.8, 0.1, borderMat);
+
+      // Bookshelf
+      createRigidMesh(buildingGroup, world, R, x + 6, fy + 1.5, z - 2, 1.2, 3.0, 2.5, woodMat); // frame
+      createRigidMesh(buildingGroup, world, R, x + 6, fy + 0.7, z - 2, 1.1, 0.08, 2.3, stoneMat); // shelf 1
+      createRigidMesh(buildingGroup, world, R, x + 6, fy + 1.4, z - 2, 1.1, 0.08, 2.3, stoneMat); // shelf 2
+      createRigidMesh(buildingGroup, world, R, x + 6, fy + 2.1, z - 2, 1.1, 0.08, 2.3, stoneMat); // shelf 3
+
+    } else {
+      // Top/extra floors: office/storage — desks, crates, shelves
+      // Desk row
+      createRigidMesh(buildingGroup, world, R, x - 5, fy + 0.4, z - 2, 3.5, 0.1, 1.5, woodMat);
+      createRigidMesh(buildingGroup, world, R, x,     fy + 0.4, z - 2, 3.5, 0.1, 1.5, woodMat);
+      createRigidMesh(buildingGroup, world, R, x + 5, fy + 0.4, z - 2, 3.5, 0.1, 1.5, woodMat);
+
+      // Storage crates stacked
+      createRigidMesh(buildingGroup, world, R, x - 6, fy + 0.5, z + 5, 2.0, 1.0, 2.0, crateMat);
+      createRigidMesh(buildingGroup, world, R, x - 6, fy + 1.5, z + 5, 2.0, 1.0, 2.0, crateMat);
+      createRigidMesh(buildingGroup, world, R, x - 3, fy + 0.5, z + 5, 2.0, 1.0, 2.0, crateMat);
+
+      // Long shelf unit
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 1.0, z + 4, 1.0, 2.0, 5.0, woodMat);
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 0.4, z + 4, 0.9, 0.08, 4.8, stoneMat);
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 1.2, z + 4, 0.9, 0.08, 4.8, stoneMat);
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 2.0, z + 4, 0.9, 0.08, 4.8, stoneMat);
+    }
+    // ─────────────────────────────────────────────────────────────────────
   }
 
   scene.add(buildingGroup);
 }
-
 function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
   const shopGroup = new THREE.Group();
   
