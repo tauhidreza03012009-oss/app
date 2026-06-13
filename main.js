@@ -291,18 +291,22 @@ async function main(){
     if (listEl) {
       let listHTML = '';
       for (const id in serverPlayers) {
-        const tag = (id === myNetworkId) ? "You" : `Player_${id.substring(0, 4)}`;
+        // FIX: Check against both custom ID and native socket.id
+        const tag = (id === myNetworkId || id === socket.id) ? "You" : `Player_${id.substring(0, 4)}`;
         listHTML += `<div>${tag}: <b>${serverPlayers[id].score || 0}</b></div>`;
       }
       listEl.innerHTML = listHTML;
     }
     for (const id in serverPlayers) {
-      if (id === myNetworkId) continue;
+      // FIX: Block your clone from spawning by checking native socket.id
+      if (id === myNetworkId || id === socket.id) continue;
+      
       const pData = serverPlayers[id];
       if (!remotePlayers[id]) remotePlayers[id] = createRemotePlayerMesh();
       targetStates[id] = { x: pData.x, y: pData.y, z: pData.z, rotY: pData.rotY };
     }
   });
+
 
   socket.on('removePlayer', id => {
     if (remotePlayers[id]) {
