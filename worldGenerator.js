@@ -109,21 +109,21 @@ function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
   const shopGroup = new THREE.Group();
   
   createRigidMesh(shopGroup, world, R, x, 0.1, z, w, 0.2, d, redFloorMat);
-  createRigidMesh(shopGroup, world, R, x, 0.1, z - w / 2 + WALL_THICKNESS + 3, 3, 3, 3, redFloorMat);
+  createRigidMesh(shopGroup, world, R, x+d/2 -WALL_THICKNESS+3, 0.1, z, 3, 3, 3, redFloorMat);
   createRigidMesh(shopGroup, world, R, x, h + 0.1, z, w + 0.6, 0.2, d + 0.6, roofMat);
   
-  createRigidMesh(shopGroup, world, R, x, h / 2, z - d / 2 + WALL_THICKNESS / 2, w, h, WALL_THICKNESS, stoneMat); 
-  createRigidMesh(shopGroup, world, R, x - w / 2 + WALL_THICKNESS / 2, h / 2, z, WALL_THICKNESS, h, d - WALL_THICKNESS * 2, stoneMat); 
-  createRigidMesh(shopGroup, world, R, x + w / 2 - WALL_THICKNESS / 2, h / 2, z, WALL_THICKNESS, h, d - WALL_THICKNESS * 2, stoneMat); 
+  createRigidMesh(shopGroup, world, R, x+w/2-WALL_THICKNESS/2, h / 2, z,WALL_THICKNESS , h,d , stoneMat); 
+  createRigidMesh(shopGroup, world, R, x, h / 2, z + d / 2 -WALL_THICKNESS / 2, w-WALL_THICKNESS*2, h,  WALL_THICKNESS , stoneMat); 
+  createRigidMesh(shopGroup, world, R, x, h / 2, z + d / 2 -WALL_THICKNESS / 2 , w-WALL_THICKNESS*2, h,  WALL_THICKNESS , stoneMat); 
 
   const pillarW = 2.0;
-  createRigidMesh(shopGroup, world, R, x - w / 2 + pillarW / 2, h / 2, z + d / 2 - WALL_THICKNESS / 2, pillarW, h, WALL_THICKNESS, borderMat);
-  createRigidMesh(shopGroup, world, R, x + w / 2 + pillarW / 2, h / 2, z + d / 2 - WALL_THICKNESS / 2, pillarW, h, WALL_THICKNESS, borderMat);
-  createRigidMesh(shopGroup, world, R, x, h - 0.6, z + d / 2 - WALL_THICKNESS / 2, w - pillarW * 2, 1.2, WALL_THICKNESS, borderMat); 
+  createRigidMesh(shopGroup, world, R, x - d / 2 +WALL_THICKNESS / 2, h / 2, z  +d / 2 -pillarW / 2,WALL_THICKNESS , h,pillarW , borderMat);
+  createRigidMesh(shopGroup, world, R, x - d / 2 +WALL_THICKNESS / 2, h / 2,  z  +d / 2 -pillarW / 2,WALL_THICKNESS, h, pillarW, borderMat);
+  createRigidMesh(shopGroup, world, R, x - d / 2 +WALL_THICKNESS / 2 , h - 0.6, z, WALL_THICKNESS, 1.2,  d - pillarW * 2, borderMat); 
   
-  createRigidMesh(shopGroup, world, R, x, h * 0.75, z + d / 2 + 0.3, w + 0.2, 0.2, 0.8, roofMat);
-  createRigidMesh(shopGroup, world, R, x, h * 0.9, z + d / 2 + 0.05, w * 0.85, 0.8, 0.1, signMat);
-  shopGroup.rotation.y=Math.PI/2
+  createRigidMesh(shopGroup, world, R, x-w/2-0.3, h * 0.75, z ,0.8, 0.2, 0.2+d, roofMat);
+  createRigidMesh(shopGroup, world, R, x-w/2-0.5, h * 0.9, z, 0.1, 0.8,d*0.85, signMat);
+
   scene.add(shopGroup);
 }
 
