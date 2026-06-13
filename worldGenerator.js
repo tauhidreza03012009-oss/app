@@ -104,7 +104,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
 
     // ── FURNITURE PER FLOOR ───────────────────────────────────────────────
     const fy = yBase + 0.2; // furniture sits just above the floor
-
+if(i==floors){
     if (i === 0) {
       // Ground floor: kitchen/lobby — counter, table, chairs
       // Counter along back wall
@@ -133,13 +133,13 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
     } else if (i % 3 === 1) {
       // Bedroom floor: bed, nightstands, wardrobe
       // Bed frame
-      createRigidMesh(buildingGroup, world, R, x - 4, fy + 0.3, z + 3, 4.5, 0.6, 7.0, woodMat);
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 0.3, z + 3, 4.5, 0.6, 7.0, woodMat);
       // Mattress
-      createRigidMesh(buildingGroup, world, R, x - 4, fy + 0.65, z + 3, 4.2, 0.35, 6.6, crateMat);
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 0.65, z + 3, 4.2, 0.35, 6.6, crateMat);
       // Pillow
-      createRigidMesh(buildingGroup, world, R, x - 4, fy + 0.85, z + 6, 3.5, 0.2, 1.2, stoneMat);
+      createRigidMesh(buildingGroup, world, R, x + 4, fy + 0.85, z + 6, 3.5, 0.2, 1.2, stoneMat);
       // Headboard
-      createRigidMesh(buildingGroup, world, R, x - 4, fy + 1.2, z + 6.6, 4.5, 1.0, 0.3, woodMat);
+      createRigidMesh(buildingGroup, world, R, x +4, fy + 1.2, z + 6.6, 4.5, 1.0, 0.3, woodMat);
 
       // Nightstands
       createRigidMesh(buildingGroup, world, R, x - 1.5, fy + 0.4, z + 3, 1.0, 0.8, 1.0, woodMat);
@@ -199,7 +199,7 @@ function buildExplorableApartment(scene, world, R, x, z, w, floorH, d, floors) {
       createRigidMesh(buildingGroup, world, R, x + 4, fy + 2.0, z + 4, 0.9, 0.08, 4.8, stoneMat);
     }
     // ─────────────────────────────────────────────────────────────────────
-  }
+  }}
 
   scene.add(buildingGroup);
 }
