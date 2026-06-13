@@ -335,7 +335,7 @@ async function main(){
     
     // Set precise egress position right out the front of the dark visor bounds
     const tracerStart = player.position.clone()
-      .add(playerForward.clone().multiplyScalar(0.38))
+      .add(playerForward.clone().multiplyScalar(1.5))
       .add(new THREE.Vector3(0, 1.4, 0));
 
     // Calculate real destination vector point by mapping actual environment layout intersects
