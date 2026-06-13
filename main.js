@@ -561,7 +561,7 @@ const tracerStart = player.position.clone()
       const horizontalDist = Math.sqrt(dx * dx + dz * dz);
 
       let desiredYaw = Math.atan2(-dx, -dz);
-      let desiredPitch = Math.atan2(-dy, horizontalDist);
+      let desiredPitch = Math.atan2(dy, horizontalDist);
 
       // Handle angle wrap-around smoothly to prevent sudden 360 spinning glitches
       let diffYaw = desiredYaw - camYaw;
