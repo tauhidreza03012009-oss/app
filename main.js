@@ -327,16 +327,18 @@ async function main(){
 
     player.rotation.y = Math.atan2(rayDir.x, -rayDir.z);
 
-    const maxRange = 1200;
+    const maxRange = 1800;
     
-    // --- FIXED THICK, GLOWING LASER VISUAL ---
-    // Extract real forward direction vector from player mesh matrix layout 
-    const playerForward = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion).normalize();
-    
-    // Set precise egress position right out the front of the dark visor bounds
-    const tracerStart = player.position.clone()
-      .add(playerForward.clone().multiplyScalar(3.5))
-      .add(new THREE.Vector3(0, 1.4, 0));
+    const camForward = new THREE.Vector3();
+const camRight = new THREE.Vector3();
+const camUp = new THREE.Vector3();
+camera.matrix.extractBasis(camRight, camUp, camForward);
+camForward.negate(); // three.js camera looks down -Z
+
+const tracerStart = player.position.clone()
+  .add(camForward.multiplyScalar(2.0))
+  .add(camRight.multiplyScalar(-0.3))
+  .add(new THREE.Vector3(0, 1.4, 0));
 
     // Calculate real destination vector point by mapping actual environment layout intersects
     let targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
