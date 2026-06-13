@@ -114,7 +114,7 @@ function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
   
   createRigidMesh(shopGroup, world, R, x+w/2-WALL_THICKNESS/2, h / 2, z,WALL_THICKNESS , h,d , stoneMat); 
   createRigidMesh(shopGroup, world, R, x, h / 2, z + d / 2 -WALL_THICKNESS / 2, w-WALL_THICKNESS*2, h,  WALL_THICKNESS , stoneMat); 
-  createRigidMesh(shopGroup, world, R, x, h / 2, z + d / 2 -WALL_THICKNESS / 2 , w-WALL_THICKNESS*2, h,  WALL_THICKNESS , stoneMat); 
+  createRigidMesh(shopGroup, world, R, x, h / 2, z - d / 2 -WALL_THICKNESS / 2 , w-WALL_THICKNESS*2, h,  WALL_THICKNESS , stoneMat); 
 
   const pillarW = 2.0;
   createRigidMesh(shopGroup, world, R, x - d / 2 +WALL_THICKNESS / 2, h / 2, z  +d / 2 -pillarW / 2,WALL_THICKNESS , h,pillarW , borderMat);
