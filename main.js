@@ -175,7 +175,7 @@ window.addEventListener('touchmove', e => {
   for(const t of e.changedTouches) {
     if(t.identifier === cId){
       camYaw -= (t.clientX - cLx) * 0.005;
-      camPitch = Math.max(0.05, Math.min(1.75, camPitch + (t.clientY - cLy) * 0.005));
+      camPitch = Math.max(0.05, Math.min(1.55, camPitch- (t.clientY - cLy) * 0.005));
       cLx = t.clientX; cLy = t.clientY;
     }
   }
