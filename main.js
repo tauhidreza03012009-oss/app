@@ -247,7 +247,7 @@ async function main(){
 
   // ── PHYSICS SETUP ─────────────────────────────────────────────────────────
   const world = new R.World({x: 0, y: -32, z: 0});
-  const MAP_SIZE = 360;
+  const MAP_SIZE = 720;
   buildMapLayout(scene, world, R, MAP_SIZE);
 
   // ── PLAYER GRAPHICS ───────────────────────────────────────────────────────
@@ -327,7 +327,7 @@ async function main(){
 
     player.rotation.y = Math.atan2(rayDir.x, -rayDir.z);
 
-    const maxRange = 120;
+    const maxRange = 1200;
     
     // --- FIXED THICK, GLOWING LASER VISUAL ---
     // Extract real forward direction vector from player mesh matrix layout 
