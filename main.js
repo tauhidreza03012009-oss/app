@@ -405,7 +405,7 @@ const tracerStart = player.position.clone()
     renderer.setSize(innerWidth, innerHeight);
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   });
-  const AIM_ASSIST_SPEED = 0.15;
+  const AIM_ASSIST_SPEED = 0.05;
   const MOVE_SPEED = 0.32;
   const clock = new THREE.Clock();
   const camPos = new THREE.Vector3();
