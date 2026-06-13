@@ -405,7 +405,7 @@ const tracerStart = player.position.clone()
     renderer.setSize(innerWidth, innerHeight);
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   });
-
+  const AIM_ASSIST_SPEED = 0.15;
   const MOVE_SPEED = 0.32;
   const clock = new THREE.Clock();
   const camPos = new THREE.Vector3();
@@ -520,6 +520,64 @@ const tracerStart = player.position.clone()
       }
     }
 
+        // ── AIM ASSIST / AUTO-TARGET LOGIC ───────────────────────────────────────
+    let bestTargetId = null;
+    let closestCrosshairDist = Infinity;
+    let targetYaw = camYaw;
+    let targetPitch = camPitch;
+
+    // Use the raycaster to see who is closest to the screen center
+    raycaster.setFromCamera(crosshairVector, camera);
+    const aimDir = raycaster.ray.direction.clone().normalize();
+    const aimOrigin = raycaster.ray.origin.clone();
+
+    for (const id in remotePlayers) {
+      const enemyPos = remotePlayers[id].position.clone().add(new THREE.Vector3(0, 1.0, 0));
+      const toEnemy = enemyPos.clone().sub(aimOrigin);
+      const projection = toEnemy.dot(aimDir);
+      
+      if (projection < 0) continue; // Enemy is behind us
+
+      const closestPointOnRay = aimOrigin.clone().add(aimDir.clone().multiplyScalar(projection));
+      const distToCrosshair = enemyPos.distanceTo(closestPointOnRay);
+      const distToPlayer = aimOrigin.distanceTo(enemyPos);
+
+      // Magnetic range check: targets enemies within 100 units overall, and 4.5 units of the crosshair
+      if (distToCrosshair < 4.5 && distToPlayer < 100) {
+        if (distToCrosshair < closestCrosshairDist) {
+          closestCrosshairDist = distToCrosshair;
+          bestTargetId = id;
+        }
+      }
+    }
+
+    // If an eligible target is found, shift the camera tracking values smoothly
+    if (bestTargetId) {
+      const targetPos = remotePlayers[bestTargetId].position.clone().add(new THREE.Vector3(0, 1.0, 0));
+      
+      const dx = targetPos.x - player.position.x;
+      const dz = targetPos.z - player.position.z;
+      const dy = targetPos.y - (player.position.y + 1.2);
+      const horizontalDist = Math.sqrt(dx * dx + dz * dz);
+
+      let desiredYaw = Math.atan2(dx, dz);
+      let desiredPitch = Math.atan2(dy, horizontalDist);
+
+      // Handle angle wrap-around smoothly to prevent sudden 360 spinning glitches
+      let diffYaw = desiredYaw - camYaw;
+      while (diffYaw < -Math.PI) diffYaw += Math.PI * 2;
+      while (diffYaw > Math.PI) diffYaw -= Math.PI * 2;
+      targetYaw = camYaw + diffYaw;
+      
+      targetPitch = Math.max(0.05, Math.min(1.55, desiredPitch));
+
+      // 0.15 is the magnetic pull strength. Increase to snap faster, decrease to make it weaker.
+      camYaw += (targetYaw - camYaw) * 0.15;
+      camPitch += (targetPitch - camPitch) * 0.15;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Recompute camera matrices using our updated camYaw/camPitch positions
     lookAt.set(player.position.x, player.position.y + 1.2, player.position.z);
 
     const idealX = player.position.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
