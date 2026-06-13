@@ -89,8 +89,8 @@ if(i!=floors){
     createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + floorH - 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
 
     if (i > 0) {
-      createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + 0.6, z + d / 2 - WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
-      createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + 0.6, z + d / 2 - WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+      createRigidMesh(buildingGroup, world, R, x - w / 4, yBase + 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
+      createRigidMesh(buildingGroup, world, R, x + w / 4, yBase + 0.6, z - d / 2 + WALL_THICKNESS / 2, windowW, 1.2, WALL_THICKNESS, borderMat);
     } }
 
     // Ramps
@@ -123,7 +123,7 @@ function buildExplorableShop(scene, world, R, x, z, w, h, d, signMat) {
   
   createRigidMesh(shopGroup, world, R, x, h * 0.75, z + d / 2 + 0.3, w + 0.2, 0.2, 0.8, roofMat);
   createRigidMesh(shopGroup, world, R, x, h * 0.9, z + d / 2 + 0.05, w * 0.85, 0.8, 0.1, signMat);
-  
+  shopGroup.rotation.y=Math.PI/2
   scene.add(shopGroup);
 }
 
