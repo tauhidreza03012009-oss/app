@@ -167,7 +167,13 @@ window.addEventListener('touchstart', e => {
     if(t.clientX >= jr.left && t.clientX <= jr.right && t.clientY >= jr.top && t.clientY <= jr.bottom) continue;
     const fr = document.getElementById('fir').getBoundingClientRect();
     if(t.clientX >= fr.left && t.clientX <= fr.right && t.clientY >= fr.top && t.clientY <= fr.bottom) continue;
-    if(cId === -1){ cId = t.identifier; cLx = t.clientX; cLy = t.clientY; }
+    
+    if(cId === -1){ 
+      e.preventDefault(); // FIX: Prevents touch-dragging from leaving simulated click remnants behind
+      cId = t.identifier; 
+      cLx = t.clientX; 
+      cLy = t.clientY; 
+    }
   }
 });
 
@@ -311,9 +317,22 @@ async function main(){
     launchTimer = 0;
   });
 
-  // ── WEAPON FIRE ───────────────────────────────────────────────────────────
-  document.getElementById('fir').addEventListener('touchstart', e => { e.preventDefault(); fireWeapon(); }, { passive: false });
-  window.addEventListener('mousedown', e => { if (e.target.tagName === 'CANVAS') fireWeapon(); });
+  // ── WEAPON FIRE FIXED ─────────────────────────────────────────────────────
+  const fireBtn = document.getElementById('fir');
+
+  fireBtn.addEventListener('touchstart', e => { 
+    e.preventDefault(); 
+    e.stopPropagation(); // FIX: Keeps target bubble clear of global canvas container window bounds
+    fireWeapon(); 
+  }, { passive: false });
+
+  window.addEventListener('mousedown', e => { 
+    // FIX: Explicitly ignore weapon fire if player clicked UI layers directly
+    if (e.target === fireBtn || e.target.closest('#jst') || e.target.closest('#jmp') || e.target.closest('#run')) {
+      return;
+    }
+    if (e.target.tagName === 'CANVAS') fireWeapon(); 
+  });
 
   const raycaster = new THREE.Raycaster();
   const crosshairVector = new THREE.Vector2(0, 0.2);
@@ -330,15 +349,15 @@ async function main(){
     const maxRange = 1800;
     
     const camForward = new THREE.Vector3();
-const camRight = new THREE.Vector3();
-const camUp = new THREE.Vector3();
-camera.matrix.extractBasis(camRight, camUp, camForward);
-camForward.negate(); // three.js camera looks down -Z
+    const camRight = new THREE.Vector3();
+    const camUp = new THREE.Vector3();
+    camera.matrix.extractBasis(camRight, camUp, camForward);
+    camForward.negate(); // three.js camera looks down -Z
 
-const tracerStart = player.position.clone()
-  .add(camForward.multiplyScalar(4.0))
-  .add(camRight.multiplyScalar(-0.3))
-  .add(new THREE.Vector3(0, 1.4, 0));
+    const tracerStart = player.position.clone()
+      .add(camForward.multiplyScalar(4.0))
+      .add(camRight.multiplyScalar(-0.3))
+      .add(new THREE.Vector3(0, 1.4, 0));
 
     // Calculate real destination vector point by mapping actual environment layout intersects
     let targetPointInSpace = rayOrigin.clone().add(rayDir.clone().multiplyScalar(maxRange));
@@ -520,13 +539,12 @@ const tracerStart = player.position.clone()
       }
     }
 
-        // ── AIM ASSIST / AUTO-TARGET LOGIC ───────────────────────────────────────
+    // ── AIM ASSIST / AUTO-TARGET LOGIC ───────────────────────────────────────
     let bestTargetId = null;
     let closestCrosshairDist = Infinity;
     let targetYaw = camYaw;
     let targetPitch = camPitch;
 
-    // Use the raycaster to see who is closest to the screen center
     raycaster.setFromCamera(crosshairVector, camera);
     const aimDir = raycaster.ray.direction.clone().normalize();
     const aimOrigin = raycaster.ray.origin.clone();
@@ -536,13 +554,12 @@ const tracerStart = player.position.clone()
       const toEnemy = enemyPos.clone().sub(aimOrigin);
       const projection = toEnemy.dot(aimDir);
       
-      if (projection < 0) continue; // Enemy is behind us
+      if (projection < 0) continue; 
 
       const closestPointOnRay = aimOrigin.clone().add(aimDir.clone().multiplyScalar(projection));
       const distToCrosshair = enemyPos.distanceTo(closestPointOnRay);
       const distToPlayer = aimOrigin.distanceTo(enemyPos);
 
-      // Magnetic range check: targets enemies within 100 units overall, and 4.5 units of the crosshair
       if (distToCrosshair < 4.5 && distToPlayer < 100) {
         if (distToCrosshair < closestCrosshairDist) {
           closestCrosshairDist = distToCrosshair;
@@ -551,7 +568,6 @@ const tracerStart = player.position.clone()
       }
     }
 
-    // If an eligible target is found, shift the camera tracking values smoothly
     if (bestTargetId) {
       const targetPos = remotePlayers[bestTargetId].position.clone().add(new THREE.Vector3(0, 1.0, 0));
       
@@ -563,7 +579,6 @@ const tracerStart = player.position.clone()
       let desiredYaw = Math.atan2(-dx, -dz);
       let desiredPitch = Math.atan2(dy, horizontalDist);
 
-      // Handle angle wrap-around smoothly to prevent sudden 360 spinning glitches
       let diffYaw = desiredYaw - camYaw;
       while (diffYaw < -Math.PI) diffYaw += Math.PI * 2;
       while (diffYaw > Math.PI) diffYaw -= Math.PI * 2;
@@ -571,13 +586,11 @@ const tracerStart = player.position.clone()
       
       targetPitch = Math.max(0.05, Math.min(1.55, desiredPitch));
 
-      // 0.15 is the magnetic pull strength. Increase to snap faster, decrease to make it weaker.
       camYaw += (targetYaw - camYaw) * 0.15;
       camPitch += (targetPitch - camPitch) * 0.15;
     }
     // ─────────────────────────────────────────────────────────────────────────
 
-    // Recompute camera matrices using our updated camYaw/camPitch positions
     lookAt.set(player.position.x, player.position.y + 1.2, player.position.z);
 
     const idealX = player.position.x + Math.sin(camYaw) * Math.cos(camPitch) * 7.5;
