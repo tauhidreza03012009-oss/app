@@ -1,15 +1,16 @@
 {
   "short_name": "My app",
   "name": "My first app",
-  "start_url": "/",
+  "start_url": "./index.html",
   "background_color": "#000000",
   "display": "standalone",
   "theme_color": "#abcdef",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "type": "image/svg+xml",
-      "sizes": "any"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ]
 }
