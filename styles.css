@@ -2,13 +2,17 @@ html,body{
   margin:0px;
   box-sizing: border-box;
   font-size: 18px;
+  overflow:hidden;
 }
 
 #header{
   position:fixed;
   top:5px;
   display:flex;
+  font-size: 22px;
   flex-direction: row;
+  align-items:center;
+  justify-content: center;
   gap:10px;
   background-color:#ddeeff;
   width:95%;
@@ -31,16 +35,57 @@ html,body{
   overflow-y: scroll;
 }
 
+.timer{
+  align-items:center;
+}
+
 #footer{
   position:fixed;
   bottom:5px;
   display:flex;
+  align-items: center;
   flex-direction: row;
-  gap:10px;
+  gap:12px;
   background-color:#ddeeff;
   width:95%;
   height:60px;
   border-radius:18px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   box-shadow:1px 1px black;
   margin:15px;
+}
+
+#footer div{
+  flex:1;
+  background-color:#ccddee;
+  text-align:center;
+  padding: 10px;
+  border-radius: 18px;
+  font-size: 20px;;
+  box-shadow:1px 1px black;
+}
+
+#main div{
+  display: flex;
+  flex-direction:column;
+  gap:0px;
+  padding: 20px;
+}
+
+.time{
+  font-size: 40px;
+  color:red;
+}
+
+.opt{
+  color:blue;
+  text-align:left;
+  font-size: 20px;
+  padding: 0px;
+}
+
+.selected{
+  color:red
 }
