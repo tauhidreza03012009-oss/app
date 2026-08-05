@@ -1,13 +1,15 @@
 {
-  "short_name":"My app",
-  "name":"My first app",
-  "start_url":"/",
-  "background_color":"0x000000",
-  "display":"standalon",
-  "theme_color":"0xabcdef",
-  "icons":[{
-    "src": "/icon.svg",
-    "type": "image/svg+xml",
-    "sizes": "any"
-  }]
+  "short_name": "My app",
+  "name": "My first app",
+  "start_url": "/",
+  "background_color": "#000000",
+  "display": "standalone",
+  "theme_color": "#abcdef",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
 }
