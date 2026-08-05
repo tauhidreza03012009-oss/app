@@ -1,7 +1,7 @@
 const CACHE_NAME = 'v1_site_cache';
 const ASSETS_TO_CACHE = [
   './',
-  './U.html',
+  './index.html',
   './styles.css',"./home.js","./dashboard.js","./setting.js","./controller.js",
   './icon.svg'
 ];
