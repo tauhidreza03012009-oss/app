@@ -1,5 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
 body,html{
   margin: 0px;
+  touch-action: none;
   height:100vh;
   background-color: rgba(32,32,32,0.999);
   background-image: 
@@ -7,12 +10,56 @@ body,html{
     linear-gradient(to right,rgba(26,26,26,1) 2px,transparent 2px),
     linear-gradient(to bottom,rgba(26,26,26,1) 2px,transparent 2px);
   background-size: auto,10px 30px,10px 30px; 
+  -webkit-user-select: none; 
+  -ms-user-select: none;   
+  user-select: none;       
+}
+
+.normal{
   animation:slideIn 1s linear infinite;
 }
 
 @keyframes slideIn{
   0% {background-position: 0 0, 0 0, 0 0;}
   100% {background-position: 0 0, 10px 30px, 10px 30px;}
+}
+
+.charging {
+  position: relative;
+}
+
+.charging::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: 
+    radial-gradient(circle at center, rgba(0, 234, 255, 0.35) 0%, rgba(0, 0, 0, 0.4) 100%),
+    linear-gradient(to right, rgba(0, 234, 255, 0.4) 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(0, 234, 255, 0.4) 2px, transparent 2px);
+  background-size: auto, 10px 30px, 10px 30px;
+  will-change: opacity;
+  animation: energyPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes energyPulse {
+  0% {  opacity: 0.2; }
+  100% {  opacity: 0.7; }
+}
+
+#icon{
+  position: fixed;
+  z-index: 10000;
+  top:2px;
+  left:1%;
+  height:50px;
+  width:50px;
+  border-radius:50%;
+  background-image:url("./icon.svg");
+  background-size: cover; 
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 #hud{
@@ -30,8 +77,8 @@ body,html{
 }
 
 .r1 {
-  width:150px;
-  height:150px;
+  width:170px;
+  height:170px;
   border:3px solid cyan;
   border-left-color:transparent;
   border-right-color:transparent;
@@ -39,44 +86,286 @@ body,html{
 }
 
 .r2 {
-  width:120px;
-  height:120px;
-  background:
-  conic-gradient(
-    cyan 0deg,
-    transparent 80deg,
-    cyan 160deg,
-    transparent 260deg,
-    cyan 360deg
-  );
-  mask: radial-gradient(
-    transparent 65%,
-    black 66%
-  );
+  width:160px;
+  height:160px;
+  background-image:url("./Jarvis.svg");
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-position:center;
 }
 
 .r3 {
-  width:85px;
-  height:85px;
+  width:100px;
+  height:100px;
   border:2px solid #66eaff;
   animation-direction:reverse;
 }
 
 .core {
-  width:70px;
-  height:70px;
+  width:90px;
+  height:90px;
   border-radius:50%;
-  background:#12304a;
+  background-image:url("./inner.svg");
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-position:center;
   color:white;
   display:grid;
   place-items:center;
   font-family:Arial;
+  font-weight: 700;
   font-size:12.5px;
-  letter-spacing:4px;
+  letter-spacing:3px;
   box-shadow:0 0 30px #00eaff;
+  z-index: 100;
 }
 
 @keyframes spin {
   from {transform:rotate(0deg);}
   to {transform:rotate(360deg);}
+}
+
+
+#side {
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  height: 100px;
+  background-size: 100% 100%;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" preserveAspectRatio="none"><defs><clipPath id="c"><polygon points="150,100 150,90 400,90 450,70 700,70 750,50 850,50 900,30 1000,30 1000,100"/></clipPath><filter id="b"><feGaussianBlur stdDeviation="6"/></filter></defs><g clip-path="url(%23c)"><polygon points="150,100 150,90 400,90 450,70 700,70 750,50 850,50 900,30 1000,30 1000,100" fill="rgba(35,38,42,0.85)"/><polygon points="150,100 150,90 400,90 450,70 700,70 750,50 850,50 900,30 1000,30 1000,100" fill="none" stroke="%23ffffff" stroke-width="16" opacity="0.6" filter="url(%23b)"/><polygon points="150,100 150,90 400,90 450,70 700,70 750,50 850,50 900,30 1000,30 1000,100" fill="none" stroke="%23ffffff" stroke-width="1.5"/></g></svg>');
+}
+
+
+#time{
+  font-family: 'Orbitron',sans-serif;
+  position: fixed;
+  margin:20px;
+  font-size:40px;
+  top:1.5%;
+  right:10%;
+  font-weight: 900;
+  color:white;
+  transform-origin: left;
+}
+
+#timer{
+  font-family: 'Orbitron',sans-serif;
+  position: fixed;
+  font-size:40px;
+  top:5%;
+  right:10%;
+  filter:blur(1px);
+  margin:20px;
+  font-weight: 900;
+  color:rgba(255,255,255,0.4);
+  display: inline-block;
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  transform: rotateX(180deg) rotateY(0deg) scale(1,0.6) ;
+}
+
+#rdate{
+  font-family:  'Orbitron',sans-serif;
+  position: absolute;
+  right:3%;
+  top:0%;
+  color:white;
+  font-weight: 700;
+  font-size: 30px;
+}
+
+#rmonth{
+  position: absolute;
+  text-align: center;
+  right:1%;
+  top:35%;
+  width:50px;
+  font-weight: 700;
+  background-color:hwb(37 4% 38%);
+  font-size: 12px;
+}
+
+#date {
+  position: fixed;
+  top: 0%;
+  width: 100%;
+  height: 120px;
+  background-size: 100% 100%;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" preserveAspectRatio="none"><defs><clipPath id="c"><polygon points="0,0 0,52 80,52 90,40 95,40 100,30 105,30 110,20 130,20 140,10 750,10 840,30 880,30 900,50 930,50 940,60 970,60 990,100 1000,100 1000,20 950,0"/></clipPath><filter id="b"><feGaussianBlur stdDeviation="6"/></filter></defs><g clip-path="url(%23c)"><polygon points="0,0 0,52 80,52 90,40 95,40 100,30 105,30 110,20 130,20 140,10 750,10 840,30 880,30 900,50 930,50 940,60 970,60 990,100 1000,100 1000,20 950,0" fill="rgba(35,38,42,0.85)"/><polygon points="0,0 0,52 80,52 90,40 95,40 100,30 105,30 110,20 130,20 140,10 750,10 840,30 880,30 900,50 930,50 940,60 970,60 990,100 1000,100 1000,20 950,0" fill="none" stroke="%23ffffff" stroke-width="16" opacity="0.6" filter="url(%23b)"/><polygon points="0,0 0,52 80,52 90,40 95,40 100,30 105,30 110,20 130,20 140,10 750,10 840,30 880,30 900,50 930,50 940,60 970,60 990,100 1000,100 1000,20 950,0" fill="none" stroke="%23ffffff" stroke-width="1.5"/></g></svg>');
+}
+
+
+#leftbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100px;
+  height: 100%;
+  background-size: 100% 100%;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 1000" preserveAspectRatio="none"><defs><clipPath id="c"><polygon points="0,0 0,200 20,200 40,250 40,400 35,410 35,460 45,470 45,600 30,630 25,630 25,750 10,770 10,880 100,1000 25,1000 0,970"/></clipPath><filter id="b"><feGaussianBlur stdDeviation="6"/></filter></defs><g clip-path="url(%23c)"><polygon points="0,0 0,200 20,200 40,250 40,400 35,410 35,460 45,470 45,600 30,630 25,630 25,750 10,770 10,880 100,1000 25,1000 0,970" fill="rgba(35,38,42,0.85)"/><polygon points="0,0 0,200 20,200 40,250 40,400 35,410 35,460 45,470 45,600 30,630 25,630 25,750 10,770 10,880 100,1000 25,1000 0,970" fill="none" stroke="%23ffffff" stroke-width="16" opacity="0.6" filter="url(%23b)"/><polygon points="0,0 0,200 20,200 40,250 40,400 35,410 35,460 45,470 45,600 30,630 25,630 25,750 10,770 10,880 100,1000 25,1000 0,970" fill="none" stroke="%23ffffff" stroke-width="1.5"/></g></svg>');
+}
+
+#device{
+  box-sizing: border-box;
+  height: 100px;
+  width:200px;
+  font-size: 14px;
+  color:#00eaff;
+  padding:5px;
+  left:0.5%;
+  overflow:visible;
+  background-color:rgba(0,234,255,0.05);
+  filter:drop-shadow(1px 1px black);
+  clip-path:polygon(0% 0%,97% 0%,100% 3%,100% 97%,97% 100%,68% 100%,68% 99%,52% 99%,52% 100%, 3% 100%,0% 97%);
+  border:1px solid #00eaff;
+  border-right: 3px solid #00eaff;
+}
+
+#wraper{
+  box-sizing: border-box;
+  height: 100px;
+  width:220px;
+  position: fixed;
+  top:7.75%;
+  font-size: 14px;
+  z-index: 100;
+}
+
+.rbtn{  
+  height:30px;
+  width:30px;
+  position: absolute;
+  left:90%;
+  cursor: pointer;
+  top:40%;
+  clip-path:polygon(0% 0%, 100% 50%, 0% 100%)
+}
+
+.swiper{
+  animation: swipe 0.5s linear 1 forwards;
+}
+.rev{
+  animation: reverser 0.5s linear 1 forwards;
+}
+
+@keyframes swipe{
+  0%{transform: translateX(0);}
+  100%{transform: translateX(-200px);}
+}
+
+@keyframes reverser{
+  0%{transform: translateX(-200px);}
+  100%{transform: translateX(0px);}
+}
+
+#notification{
+  position: absolute;
+  top:50%;
+  right:3%;
+  font-size: 30px;
+  z-index: 100;
+}
+#paper{
+  position: fixed;
+  top: 48%;
+  left: 47%;
+  width: 300px;
+  transform-origin: 100% 100%; 
+}
+#notif{
+  position: relative;
+  height: 300px;
+  width: 100%;
+  border: 1px solid #00eaff;
+  background-color: rgba(0, 234, 255, 0.1);
+  color: #00eaff;
+  display: flex;
+  flex-direction: column;
+
+  
+}
+.visib{
+   display:block;
+   animation: launchFromMessageIcon 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;}
+.invisib{
+    animation: launchToMessageIcon 1s cubic-bezier(0.16, 0.5, 0.2, 0.7)  forwards;
+}
+#demo{
+  position: relative;
+  height: 123px;
+  width: 100%;
+  background-color: rgba(0, 234, 255, 0.3);
+  clip-path: polygon(0% 0%, 100% 0%, 95% 100%);
+}
+
+@keyframes launchFromMessageIcon {
+  0% { transform: translate(calc(97vw - (47vw + 300px)), calc(96vh - (48vh + 423px))) scale(0.01);   opacity: 0;  }
+  100% {  transform: translate(0, 0) scale(1);opacity: 1  }
+}
+
+@keyframes launchToMessageIcon {
+  0% {  transform: translate(0, 0) scale(1);opacity: 1  }
+  100% { transform: translate(calc(97vw - (47vw + 300px)), calc(96vh - (48vh + 423px))) scale(0.05);  opacity: 0;display:none  }
+
+}
+
+#command{
+  position: fixed;
+  box-sizing:border-box;
+  height:40px;
+  width:200px;
+  left:5.8%;
+  top:41%;
+  border:1px solid rgba(255,255,255,0.4);
+  background-color:rgba(0,234,255,0.1)
+}
+
+#com{
+  background-color:rgba(0,234,255,0.2);
+  border:0px solid black;
+  height:40px;
+  width:200px;
+  padding: 0px;
+  font-weight: 600;
+  color:white;
+  font-size: 17px;
+}
+
+#com:hover,#com:active,#com:focus{
+  outline:0px solid black;
+  caret-color:#00ceed;
+  caret-shape:block;
+}
+
+.term{
+  position: fixed;
+  width:300px;
+  height:300px;
+  top:12%;
+  left:47%;
+  background-color:rgba(0,24,25,0.75);
+  border:1px solid #00eaff;
+  animation:pop 1s 1 forwards;
+}
+
+.reversal{
+  animation: opo 1s 1 forwards;
+}
+
+@keyframes pop{
+  0%{transform: scale(0.01);}
+  100%{transform: scale(1);}
+}
+
+@keyframes opo{
+  0%{transform: scale(1);}
+  100%{transform: scale(0.01);}
+}
+
+.delete{
+  float:right;
+  height: 30px;
+  width:30px;
+  background-color:transparent;
+  border:0px solid blue;
 }

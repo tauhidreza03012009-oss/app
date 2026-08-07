@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    for(let i=0;i<localStorage.length;i++){
+      let key=localStorage.key(i)
+      let value=localStorage.getItem(key)
+      let div=document.createElement("div")
+      let div1=document.createElement("div")
+      let btn=document.createElement("button")
+      btn.innerHTML="⌫"
+      div1.innerHTML=key
+      btn.addEventListener('click',()=>{
+        localStorage.removeItem(key)
+      })
+      div.appendChild(div1)
+      div.appendChild(btn)
+      document.body.appendChild(div)
+    }
+  </script>
+</body>
+</html>  
